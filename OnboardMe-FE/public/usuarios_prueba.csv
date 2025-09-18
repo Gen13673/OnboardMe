@@ -1,0 +1,6 @@
+Nombre,Apellido,Email,Contrasenia,Id_Rol,Area
+Juan,Pérez,jcaggiano@frba.utn.edu.ar,pass123,Empleado,IT
+María,Gómez,maria.gomez@example.com,pass123,Empleado,SEGURIDAD
+Carlos,López,carlos.lopez@example.com,pass123,Empleado,SOPORTE
+Lucía,Martínez,lucia.martinez@example.com,pass123,Empleado,GERENCIA
+Pedro,Fernández,pedro.fernandez@example.com,pass123,Empleado,IT

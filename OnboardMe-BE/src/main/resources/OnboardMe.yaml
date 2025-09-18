@@ -1,0 +1,902 @@
+openapi: 3.0.1
+info:
+  title: OnboardMe API
+  description: API for the OnboardMe project
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      tags:
+        - User
+      summary: Get Users
+      operationId: getUsers
+      responses:
+        '200':
+          description: Returns a list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDTO'
+  /users/{idUser}:
+    get:
+      tags:
+        - User
+      summary: Get User by ID
+      operationId: getUser
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Returns a user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+  /users/buddy/{idUser}/{idBuddy}:
+    post:
+      tags:
+        - User
+      summary: assigns a buddy to a user
+      operationId: assignBuddy
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+        - $ref: '#/components/parameters/idBuddy'
+      responses:
+        '200':
+          description: Buddy assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+  /users/buddy/{idBuddy}:
+    get:
+      tags:
+        - User
+      summary: Get users assigned to a buddy
+      operationId: getUsersByBuddy
+      parameters:
+        - $ref: '#/components/parameters/idBuddy'
+      responses:
+        '200':
+          description: List of users mentored by the buddy
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDTO'
+  /users/upload:
+    post:
+      tags:
+        - User
+      summary: Upload a CSV file to create multiple users
+      description: Allows HR users to upload a CSV file containing new employees to create them in bulk.
+      operationId: uploadUsersCsv
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        '200':
+          description: CSV processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRecords:
+                    type: integer
+                    description: Total records found in the file
+                  created:
+                    type: integer
+                    description: Number of users created successfully
+                  failed:
+                    type: integer
+                    description: Number of records that failed
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                      description: List of error messages for failed records
+        '400':
+          description: Invalid file format or missing data
+        '403':
+          description: Forbidden - Only HR users can perform this action
+
+  /courses:
+    get:
+      tags:
+        - Courses
+      summary: Get all courses
+      operationId: getCourses
+      responses:
+        '200':
+          description: List of all courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDTO'
+  /courses/create:
+    post:
+      tags:
+        - Courses
+      summary: Create a new course
+      operationId: createCourse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseDTO'
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDTO'
+  /courses/{idUser}:
+    get:
+      tags:
+        - Courses
+      summary: Get courses assigned to a user
+      operationId: getCoursesByUser
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: List of courses assigned to the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDTO'
+  /courses/favorite/{idCourse}/{idUser}:
+    post:
+      tags:
+        - Courses
+      summary: Mark course as favorite for a user
+      operationId: favCourse
+      parameters:
+        - $ref: '#/components/parameters/idCourse'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Marked as favorite
+  /courses/favorites/{idUser}:
+    get:
+      tags:
+        - Courses
+      summary: Get user's favorite courses
+      operationId: getFavorites
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: List of favorite courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDTO'
+  /courses/progress/{idCourse}/{idUser}:
+    get:
+      tags:
+        - Courses
+      summary: Get progress for a user in a course
+      operationId: getCourseProgress
+      parameters:
+        - $ref: '#/components/parameters/idCourse'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Course progress as a percentage
+          content:
+            application/json:
+              schema:
+                type: number
+                format: double
+  /courses/enrollment/{idCourse}/{idUser}:
+    get:
+      tags:
+        - Courses
+      summary: Get enrollment for a user in a course
+      operationId: getEnrollment
+      parameters:
+        - $ref: '#/components/parameters/idCourse'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Enrollment for the user in the course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentDTO'
+  /courses/progress/{idCourse}/{idUser}/{sectionId}:
+      post:
+        tags:
+          - Courses
+        summary: Update progress for a user in a course
+        operationId: updateCourseProgress
+        parameters:
+          - $ref: '#/components/parameters/idCourse'
+          - $ref: '#/components/parameters/idUser'
+          - $ref: '#/components/parameters/sectionId'
+        responses:
+          '200':
+            description: Progress updated
+  /courses/assign/{idCourse}/{idBuddy}/{idUser}:
+    post:
+      tags:
+        - Courses
+      summary: Assign course to a user by buddy
+      operationId: assignCourse
+      parameters:
+        - $ref: '#/components/parameters/idCourse'
+        - $ref: '#/components/parameters/idBuddy'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Course assigned
+  /sections/{sectionId}/content:
+    get:
+      tags:
+        - Sections
+      summary: Get content of a section
+      operationId: getSectionContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      responses:
+        '200':
+          description: Content of the section
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionContentDTO'
+  /sections/{sectionId}/video:
+    post:
+      tags:
+        - Sections
+      summary: Add video content to section
+      operationId: addVideoContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: https://youtube.com/...
+      responses:
+        '200':
+          description: Video added successfully
+
+  /sections/{sectionId}/document:
+    post:
+      tags:
+        - Sections
+      summary: Add document content to section
+      operationId: addDocumentContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: https://example.com/doc.pdf
+      responses:
+        '200':
+          description: Document added successfully
+
+  /sections/{sectionId}/document/upload:
+    post:
+      tags:
+        - Sections
+      summary: Upload a document file to section
+      operationId: uploadDocumentContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded and stored successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+  /sections/{sectionId}/image:
+    post:
+      tags:
+        - Sections
+      summary: Add image content to section
+      operationId: addImageContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: https://example.com/image.jpg
+      responses:
+        '200':
+          description: Image added successfully
+
+  /sections/{sectionId}/exam:
+    post:
+      tags:
+        - Sections
+      summary: Add exam content to section
+      operationId: addExamContent
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamContentDTO'
+      responses:
+        '200':
+          description: Exam added successfully
+  /sections/{sectionId}/exam/submit/{idUser}:
+    post:
+      tags:
+        - Sections
+      summary: Submit exam answers
+      operationId: submitExam
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+        - $ref: '#/components/parameters/idUser'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamSubmissionDTO'
+      responses:
+        '200':
+          description: Exam evaluated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResultDTO'
+  /sections/{sectionId}/exam/result/{idUser}:
+    get:
+      tags:
+        - Sections
+      summary: Get exam result for user
+      operationId: getExamResult
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Exam result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResultDTO'
+  /courses/get/{idCourse}:
+    get:
+      tags:
+        - Courses
+      summary: Get course by id
+      operationId: getCourseById
+      parameters:
+        - $ref: '#/components/parameters/idCourse'
+      responses:
+        '200':
+          description: Course details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDTO'
+
+  /metrics:
+    get:
+      tags:
+        - Metrics
+      summary: Obtener cualquier métrica
+      operationId: getMetric
+      parameters:
+        - $ref: '#/components/parameters/metricType'
+        - $ref: '#/components/parameters/idBuddyQuery'
+        - $ref: '#/components/parameters/idUserQuery'
+      responses:
+        '200':
+          description: Datos de la métrica solicitada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericMetricDTO'
+
+  /notifications/{idUser}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notifications for a user
+      operationId: getNotificationsByUser
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: List of notifications for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationDTO'
+
+  /notifications/{idNotification}/markAsRead:
+    post:
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      operationId: markNotificationAsRead
+      parameters:
+        - name: idNotification
+          in: path
+          required: true
+          description: ID of the notification
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDTO'
+        '404':
+          description: Notification not found
+
+  /hello:
+    get:
+      tags:
+        - Hello
+      summary: Hello Endpoint
+      responses:
+        '200':
+          description: Returns a hello message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello, World!"
+
+components:
+  parameters:
+    sectionId:
+      name: sectionId
+      in: path
+      required: true
+      description: ID of the section
+      schema:
+        type: integer
+        format: int64
+    idBuddy:
+      name: idBuddy
+      in: path
+      required: true
+      description: Id of the buddy
+      schema:
+        type: integer
+        format: int64
+    idCourse:
+      name: idCourse
+      in: path
+      required: true
+      description: Id of the course
+      schema:
+        type: integer
+        format: int64
+    idUser:
+      name: idUser
+      in: path
+      required: true
+      description: Id of the user
+      schema:
+        type: integer
+        format: int64
+    idBuddyQuery:
+      name: idBuddy
+      in: query
+      required: false
+      description: Id of the buddy (query param para métricas)
+      schema:
+        type: integer
+        format: int64
+    idUserQuery:
+      name: idUser
+      in: query
+      required: false
+      description: Id of the user (query param para métricas)
+      schema:
+        type: integer
+        format: int64
+    metricType:
+      name: metricType
+      in: query
+      required: true
+      description: Tipo de métrica a calcular
+      schema:
+        $ref: '#/components/schemas/MetricTypeDTO'
+  schemas:
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        createdDate:
+          type: string
+          format: date
+        status:
+          type: integer
+        address:
+          type: string
+        phone:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        buddy:
+          $ref: '#/components/schemas/UserDTO'
+        role:
+          $ref: '#/components/schemas/RoleDTO'
+
+    RoleDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+
+    CourseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        createdDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        createdBy:
+          $ref: '#/components/schemas/UserDTO'
+        enrollments:
+          type: Array
+          items:
+              $ref: '#/components/schemas/EnrollmentDTO'
+        sections:
+          type: Array
+          items:
+            $ref: '#/components/schemas/SectionDTO'
+
+    SectionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        order:
+          type: string
+        idCourse:
+          type: integer
+          format: int64
+        content:
+          $ref: '#/components/schemas/SectionContentDTO'
+
+
+    EnrollmentDTO:
+      type: object
+      properties:
+        idCourse:
+          type: integer
+          format: int64
+        idUser:
+          type: integer
+          format: int64
+        enrolledAt:
+          type: string
+          format: date
+        finishedDate:
+          type: string
+          format: date
+        status:
+          type: string
+        favorite:
+          type: boolean
+        idSection:
+          type: integer
+          format: int64
+
+    NotificationDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        idUser:
+          type: integer
+          format: int64
+        title:
+          type: string
+        message:
+          type: string
+        sentDate:
+          type: string
+          format: date
+        seen:
+          type: boolean
+    SectionContentDTO:
+      type: object
+      discriminator:
+        propertyName: type
+        mapping:
+          VIDEO: VideoContentDTO
+          DOCUMENT: DocumentContentDTO
+          IMAGE: ImageContentDTO
+          EXAM: ExamContentDTO
+      properties:
+        contentId:
+          type: integer
+          format: int64
+        sectionId:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum: [ VIDEO, DOCUMENT, IMAGE, EXAM ]
+
+    VideoContentDTO:
+      allOf:
+        - $ref: '#/components/schemas/SectionContentDTO'
+        - type: object
+          properties:
+            url:
+              type: string
+
+    DocumentContentDTO:
+      allOf:
+        - $ref: '#/components/schemas/SectionContentDTO'
+        - type: object
+          properties:
+            url:
+              type: string
+
+    ImageContentDTO:
+      allOf:
+        - $ref: '#/components/schemas/SectionContentDTO'
+        - type: object
+          properties:
+            url:
+              type: string
+
+    ExamContentDTO:
+      allOf:
+        - $ref: '#/components/schemas/SectionContentDTO'
+        - type: object
+          properties:
+            timeLimit:
+              type: integer
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExamQuestionDTO'
+
+    ExamQuestionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
+        type:
+          type: string
+          enum: [ SINGLE_CHOICE, MULTIPLE_CHOICE ]
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamOptionDTO'
+
+    ExamOptionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
+        correct:
+          type: boolean
+
+    MetricTypeDTO:
+      type: string
+      description: Enum de tipos de métricas
+      enum:
+        - COURSE_COMPLETION
+        - AVG_COMPLETION_TIME
+        - SECTION_DROPOFF
+        - BUDDY_COVERAGE
+        - USER_PROGRESS
+        - ENROLLMENTS_TREND
+        - COMPLETIONS_TREND
+        - COURSE_USER_PROGRESS
+        - COURSE_USER_ELAPSED_DAYS
+
+
+    DataPointDTO:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+
+    GenericMetricDTO:
+      type: object
+      properties:
+        metricType:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPointDTO'
+
+    CourseCompletionDTO:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+        courseTitle:
+          type: string
+        completionRate:
+          type: number
+          format: double
+
+    TimeToCompleteDTO:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+        courseTitle:
+          type: string
+        averageDays:
+          type: number
+          format: double
+
+    SectionDropoffDTO:
+      type: object
+      properties:
+        sectionId:
+          type: integer
+          format: int64
+        sectionTitle:
+          type: string
+        dropoffRate:
+          type: number
+          format: double
+
+    UserProgressDTO:
+      type: object
+      properties:
+        courseTitle:
+          type: string
+        progressPercent:
+          type: number
+          format: double
+
+    BuddyCoverageDTO:
+      type: object
+      properties:
+        coveragePercent:
+          type: number
+          format: double
+        averageMentees:
+          type: number
+          format: double
+
+    ExamSubmissionDTO:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamAnswerDTO'
+
+    ExamAnswerDTO:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    ExamResultDTO:
+      type: object
+      properties:
+        score:
+          type: integer
+        totalQuestions:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamQuestionResultDTO'
+
+    ExamQuestionResultDTO:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        correctOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        correct:
+          type: boolean
+
