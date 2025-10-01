@@ -14,7 +14,7 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import es from "date-fns/locale/es"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
-import { LockIcon } from "lucide-react"
+import { LockIcon, Trash2 } from "lucide-react"
 import ExamBuilder from "@/app/components/ExamBuilder"
 
 
@@ -27,6 +27,7 @@ export default function CreateCoursePage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [expiryDate, setexpiryDate] = useState<Date>(null)
+  const [area, setArea] = useState("")
   const [sections, setSections] = useState<Section[]>([])
   const [newSection, setNewSection] = useState<Section>({
     id: 0,
@@ -78,6 +79,14 @@ export default function CreateCoursePage() {
         fileInputRef.current.value = ""
       }
     }
+  }
+
+  const handleRemoveSection = (index: number) => {
+    const updated = sections.filter((_, i) => i !== index).map((sec, idx) => ({
+      ...sec,
+      order: (idx + 1).toString(),
+    }))
+    setSections(updated)
   }
 
   const handleAddSection = () => {
@@ -166,6 +175,7 @@ export default function CreateCoursePage() {
         description,
         expiryDate: new Date(expiryDate),
         createdBy: user,
+        area,
         sections: processed,
         enrollments: [],
       })
@@ -189,8 +199,8 @@ export default function CreateCoursePage() {
       const type = file.type.startsWith("image/")
         ? "IMAGE"
         : file.type.startsWith("video/")
-        ? "VIDEO"
-        : "DOCUMENT"
+          ? "VIDEO"
+          : "DOCUMENT"
       const url = URL.createObjectURL(file)
       setNewSection({
         ...newSection,
@@ -246,6 +256,26 @@ export default function CreateCoursePage() {
             />
           </div>
 
+          <div className="bg-white p-6 rounded-xl shadow-sm border md:col-span-2">
+            <label className="block text-gray-800 font-semibold mb-2">Área</label>
+            <select
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Seleccioná un área</option>
+              <option value="IT">IT</option>
+              <option value="FINANZAS">Finanzas</option>
+              <option value="SEGURIDAD">Seguridad</option>
+              <option value="RRHH">RRHH</option>
+              <option value="IA">Inteligencia Artificial</option>
+              <option value="ADMINISTRATIVO">Administrativo</option>
+              <option value="GERENCIAL">Gerencial</option>
+              <option value="SOPORTE">Soporte</option>
+            </select>
+          </div>
+
           <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border">
             <label className="block text-gray-800 font-semibold mb-2">Descripción</label>
             <textarea
@@ -282,29 +312,29 @@ export default function CreateCoursePage() {
                     ...prev,
                     content: t === "EXAM"
                       ? {
-                          type: "EXAM",
-                          url: "",
-                          file: null,
-                          timeLimit: null,
-                          questions: [
-                            {
-                              text: "",
-                              type: "SINGLE_CHOICE",
-                              options: [
-                                { text: "", correct: false },
-                                { text: "", correct: false },
-                              ],
-                            },
-                          ],
-                        }
+                        type: "EXAM",
+                        url: "",
+                        file: null,
+                        timeLimit: null,
+                        questions: [
+                          {
+                            text: "",
+                            type: "SINGLE_CHOICE",
+                            options: [
+                              { text: "", correct: false },
+                              { text: "", correct: false },
+                            ],
+                          },
+                        ],
+                      }
                       : {
-                          ...prev.content,
-                          type: t,
-                          url: "",
-                          file: null,
-                          timeLimit: undefined,
-                          questions: undefined,
-                        },
+                        ...prev.content,
+                        type: t,
+                        url: "",
+                        file: null,
+                        timeLimit: undefined,
+                        questions: undefined,
+                      },
                   }))
                 }}
                 disabled={!!newSection.content?.file}
@@ -357,7 +387,7 @@ export default function CreateCoursePage() {
                 {["VIDEO", "DOCUMENT", "IMAGE"].includes(newSection.content?.type) && !newSection.content?.file && (
                   <div className="md:col-span-12 mt-0">
                     <div className="flex flex-col items-center w-full gap-2">
-                        <span className="text-center text-gray-500 text-sm">ó</span>
+                      <span className="text-center text-gray-500 text-sm">ó</span>
                       <input
                         type="text"
                         placeholder="URL de contenido"
@@ -440,17 +470,28 @@ export default function CreateCoursePage() {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="border border-gray-300 p-4 rounded-lg bg-white hover:bg-blue-50 cursor-move transition-shadow"
+                        className="border border-gray-300 p-4 rounded-lg bg-white hover:bg-blue-50 cursor-move transition-shadow flex justify-between items-center"
                       >
-                        <p className="font-semibold text-blue-800">
-                          {s.order}. {s.title}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Tipo: {s.content?.type} {s.content?.url && ` | URL: ${s.content.url}`}
-                          {s.content?.file && ` | Archivo: ${s.content.file.name}`}
-                          {s.content?.type === "EXAM" && s.content?.questions && ` | ${s.content.questions.length} pregunta(s)`}
-                          {s.content?.type === "EXAM" && (s.content.timeLimit ?? 0) > 0 && ` | ${s.content.timeLimit} min`}
-                        </p>
+                        <div>
+                          <p className="font-semibold text-blue-800">
+                            {s.order}. {s.title}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Tipo: {s.content?.type} {s.content?.url && ` | URL: ${s.content.url}`}
+                            {s.content?.file && ` | Archivo: ${s.content.file.name}`}
+                            {s.content?.type === "EXAM" && s.content?.questions && ` | ${s.content.questions.length} pregunta(s)`}
+                            {s.content?.type === "EXAM" && (s.content.timeLimit ?? 0) > 0 && ` | ${s.content.timeLimit} min`}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSection(index)}
+                          className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-100 transition"
+                          title="Eliminar sección"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
                       </div>
                     )}
                   </Draggable>

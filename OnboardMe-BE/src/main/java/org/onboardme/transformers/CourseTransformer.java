@@ -41,6 +41,7 @@ public class CourseTransformer {
         dto.setId(course.getId());
         dto.setTitle(course.getTitle());
         dto.setDescription(course.getDescription());
+        dto.setArea(course.getArea());
         dto.setCreatedDate(course.getCreatedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
         if (course.getExpiryDate() != null) {
             dto.setExpiryDate(course.getExpiryDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
@@ -57,6 +58,7 @@ public class CourseTransformer {
         course.setId(dto.getId());
         course.setTitle(dto.getTitle());
         course.setDescription(dto.getDescription());
+        course.setArea(dto.getArea());
 
         if (dto.getCreatedDate() != null) {
             Date created = Date.from(dto.getCreatedDate().atStartOfDay(ZoneId.systemDefault()).toInstant());

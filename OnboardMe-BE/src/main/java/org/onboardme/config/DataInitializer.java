@@ -9,7 +9,6 @@ import org.onboardme.dao.entities.content.*;
 import java.util.Date;
 import java.util.List;
 
-
 @Configuration
 public class DataInitializer {
 
@@ -131,7 +130,7 @@ public class DataInitializer {
                 .orElseGet(() -> courseRepository.save(
                         new Course(null, "Salud Ocupacional", "Principios básicos de salud y seguridad laboral.", "SEGURIDAD", ahora, dentroDeUnMes, rrhhUser2, null, null)));
 
-        // ---------- SECCIONES ----------
+        // ---------- SECCIONES (orden en cada curso) ----------
         Section s1 = sectionRepository.findByTitle("Bienvenida")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Bienvenida", "1", cursoOnboarding, null,null)));
@@ -206,13 +205,25 @@ public class DataInitializer {
 
         // Actualizar cursos con secciones
         cursoOnboarding.setSections(List.of(s1, s2));
+        courseRepository.save(cursoOnboarding);
+
         cursoSeguridad.setSections(List.of(s3, s4));
+        courseRepository.save(cursoSeguridad);
+
         cursoRRHH.setSections(List.of(s5, s6));
+        courseRepository.save(cursoRRHH);
+
         cursoComunicacion.setSections(List.of(s7, s8));
+        courseRepository.save(cursoComunicacion);
+
         cursoCultura.setSections(List.of(s9, s10));
+        courseRepository.save(cursoCultura);
+
         cursoSalud.setSections(List.of(s11, s12));
+        courseRepository.save(cursoSalud);
+
         cursoInicial.setSections(List.of(s13, s14, s15, s16, s17, s18));
-        courseRepository.saveAll(List.of(cursoOnboarding, cursoSeguridad, cursoRRHH, cursoComunicacion, cursoCultura, cursoSalud, cursoInicial));
+        courseRepository.save(cursoInicial);
 
         // ---------- CONTENIDOS DE SECCIONES ----------
         if (s1.getContent() == null) {
@@ -513,61 +524,42 @@ public class DataInitializer {
         enrollmentRepository.findByUserIdAndCourseId(employeeUser5.getId(), cursoSeguridad.getId())
                 .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId15, employeeUser5, cursoSeguridad, ahora, null, "ASIGNADO", false, s3)));
 
-
-        // ===================== SEED MÉTRICAS: Buddy Alex con empleados y cursos con finalizaciones =====================
+        // ===================== SEED MÉTRICAS =====================
         {
-            final String BUDDY_EMAIL = "buddy.alex@empresa.com";
-
-            // Helpers genéricos (sin crear métodos nuevos en repos)
-            java.util.Date now = new java.util.Date();
             final long DAY = 1000L * 60 * 60 * 24;
-            java.util.function.Function<Integer, java.util.Date> daysAgo = d -> new java.util.Date(now.getTime() - (long)d * DAY);
 
-            // Buscar o crear rol Buddy / Empleado (usa los nombres que ya tengas en tu DB)
-            org.onboardme.dao.entities.Role roleBuddy = roleRepository.findAll().stream()
-                    .filter(r -> r.getName() != null && r.getName().equalsIgnoreCase("Buddy"))
-                    .findFirst().orElse(null);
-            org.onboardme.dao.entities.Role roleEmpleado = roleRepository.findAll().stream()
-                    .filter(r -> r.getName() != null && r.getName().equalsIgnoreCase("Empleado"))
-                    .findFirst().orElse(null);
+            // ------- Buddy Alex -------
+            User buddyAlex = userRepository.findByEmail("buddy.alex@empresa.com").orElseGet(() ->
+                    userRepository.save(
+                            new User(
+                                    null, "Alex", "Gómez", "buddy.alex@empresa.com", "buddy123",
+                                    "IT", ahora, 1, "Av. Siempreviva 742", "1150000000", ahora,
+                                    buddy, null, null, null
+                            )
+                    )
+            );
 
-            // Buscar o crear Buddy Alex
-            org.onboardme.dao.entities.User buddyAlex = userRepository.findAll().stream()
-                    .filter(u -> BUDDY_EMAIL.equalsIgnoreCase(u.getEmail()))
-                    .findFirst().orElseGet(() -> {
-                        org.onboardme.dao.entities.User u = new org.onboardme.dao.entities.User();
-                        u.setFirstName("Alex");
-                        u.setLastName("Gómez");
-                        u.setEmail(BUDDY_EMAIL);
-                        u.setPassword("buddy123");
-                        u.setRole(roleBuddy);
-                        return userRepository.save(u);
-                    });
-
-            // Empleados del Buddy Alex (se crean si no existen y se les setea buddy=Alex)
+            // ------- Empleados de Alex -------
             String[][] emps = {
-                    {"mario.ruiz@empresa.com",   "Mario",    "Ruiz"},
-                    {"camila.diaz@empresa.com",  "Camila",   "Díaz"},
-                    {"sofia.lopez@empresa.com",  "Sofía",    "López"},
-                    {"juan.paz@empresa.com",     "Juan",     "Paz"},
-                    {"luis.mansilla@empresa.com","Luis",     "Mansilla"},
-                    {"mariana.suarez@empresa.com","Mariana", "Suárez"},
+                    {"mario.ruiz@empresa.com",   "Mario",   "Ruiz"},
+                    {"camila.diaz@empresa.com",  "Camila",  "Díaz"},
+                    {"sofia.lopez@empresa.com",  "Sofía",   "López"},
+                    {"juan.paz@empresa.com",     "Juan",    "Paz"},
+                    {"luis.mansilla@empresa.com","Luis",    "Mansilla"},
+                    {"mariana.suarez@empresa.com","Mariana","Suárez"},
             };
-            java.util.List<org.onboardme.dao.entities.User> empleadosAlex = new java.util.ArrayList<>();
+            java.util.List<User> empleadosAlex = new java.util.ArrayList<>();
             for (String[] e : emps) {
                 String email = e[0], nombre = e[1], apellido = e[2];
-                org.onboardme.dao.entities.User u = userRepository.findAll().stream()
-                        .filter(x -> email.equalsIgnoreCase(x.getEmail()))
-                        .findFirst().orElseGet(() -> {
-                            org.onboardme.dao.entities.User nu = new org.onboardme.dao.entities.User();
-                            nu.setFirstName(nombre);
-                            nu.setLastName(apellido);
-                            nu.setEmail(email);
-                            nu.setPassword("empleado123");
-                            nu.setRole(roleEmpleado);
-                            return userRepository.save(nu);
-                        });
-                // asegurar buddy asignado
+                User u = userRepository.findByEmail(email).orElseGet(() ->
+                        userRepository.save(
+                                new User(
+                                        null, nombre, apellido, email, "empleado123",
+                                        "IT", ahora, 1, "Sin dirección", "1100000000", ahora,
+                                        empleado, null, null, buddyAlex
+                                )
+                        )
+                );
                 if (u.getBuddy() == null || !u.getBuddy().getId().equals(buddyAlex.getId())) {
                     u.setBuddy(buddyAlex);
                     u = userRepository.save(u);
@@ -575,128 +567,185 @@ public class DataInitializer {
                 empleadosAlex.add(u);
             }
 
-            // Cursos a usar (buscar o crear por título)
-            java.util.function.Function<String, org.onboardme.dao.entities.Course> ensureCourse = title -> {
-                return courseRepository.findAll().stream()
-                        .filter(c -> title.equalsIgnoreCase(c.getTitle()))
-                        .findFirst()
-                        .orElseGet(() -> {
-                            org.onboardme.dao.entities.Course c = new org.onboardme.dao.entities.Course();
-                            c.setTitle(title);
-                            c.setDescription("Curso " + title);
-                            c.setCreatedDate(now);
-                            return courseRepository.save(c);
-                        });
-            };
+            User mario   = empleadosAlex.get(0);
+            User camila  = empleadosAlex.get(1);
+            User sofia   = empleadosAlex.get(2);
+            User juan    = empleadosAlex.get(3);
+            User luis    = empleadosAlex.get(4);
+            User mariana = empleadosAlex.get(5);
 
-            org.onboardme.dao.entities.Course cOnboarding   = ensureCourse.apply("Onboarding Básico");
-            org.onboardme.dao.entities.Course cSeguridad    = ensureCourse.apply("Seguridad y Compliance");
-            org.onboardme.dao.entities.Course cHerramientas = ensureCourse.apply("Herramientas Internas");
-            org.onboardme.dao.entities.Course cCultura      = ensureCourse.apply("Cultura Corporativa");
-            org.onboardme.dao.entities.Course cComunicacion = ensureCourse.apply("Herramientas de Comunicación");
-
-            // Reemplazá COMPLETO el helper por este:
-            java.util.function.BiFunction<org.onboardme.dao.entities.User, org.onboardme.dao.entities.Course, org.onboardme.dao.entities.Enrollment> getOrCreateEnrollment =
-                    (u, c) -> {
-                        // 1) Si ya existe, lo devolvemos
-                        var existing = enrollmentRepository.findByUserIdAndCourseId(u.getId(), c.getId());
-                        if (existing.isPresent()) {
-                            return existing.get();
-                        }
-
-                        // 2) Buscamos una sección del curso (tu entidad Enrollment tiene FK a Sección)
-                        org.onboardme.dao.entities.Section firstSectionForCourse = sectionRepository.findAll().stream()
-                                .filter(s -> s.getCourse() != null && s.getCourse().getId().equals(c.getId()))
-                                .findFirst()
-                                .orElse(null); // si en tu DB es NOT NULL, asegurate de tener secciones creadas
-
-                        // 3) Creamos la inscripción seteando el ID embebido ANTES de persistir (CLAVE DEL FIX)
-                        org.onboardme.dao.entities.Enrollment e = new org.onboardme.dao.entities.Enrollment();
-                        e.setId(new org.onboardme.dao.entities.EnrollmentId(u.getId(), c.getId())); // <-- evita el NPE
-                        e.setUser(u);
-                        e.setCourse(c);
-                        e.setEnrolledAt(new java.util.Date()); // inicial; luego lo pisa completeWithDuration/markInProgress
-                        e.setFinishedDate(null);
-                        e.setStatus("ASIGNADO");            // usa tus valores reales; en tu repo está "ASIGNADO" / "FINALIZADO"
-                        e.setFavorite(Boolean.FALSE);
-                        e.setSection(firstSectionForCourse);
-
-                        return enrollmentRepository.save(e);
-                    };
-
-            // Setear una finalización con duración fija (en días)
-            java.util.function.Consumer<Object[]> completeWithDuration = arr -> {
-                org.onboardme.dao.entities.User u = (org.onboardme.dao.entities.User) arr[0];
-                org.onboardme.dao.entities.Course c = (org.onboardme.dao.entities.Course) arr[1];
-                int durationDays = (Integer) arr[2];
-                int startOffsetDays = (Integer) arr[3]; // cuántos días atrás empezó
-                org.onboardme.dao.entities.Enrollment e = getOrCreateEnrollment.apply(u, c);
-                e.setEnrolledAt(daysAgo.apply(startOffsetDays));
-                e.setFinishedDate(daysAgo.apply(startOffsetDays - durationDays));
-                e.setStatus("FINALIZADO");
+            // ------- ENROLLMENTS -------
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mario.getId(), cursoOnboarding.getId()), mario, cursoOnboarding,
+                                new Date(ahora.getTime() - 30 * DAY), new Date(ahora.getTime() - (30 - 12) * DAY), "FINALIZADO", false, s2)));
                 enrollmentRepository.save(e);
-            };
-
-            // Marcar "en progreso" (sin finishedDate)
-            java.util.function.BiConsumer<org.onboardme.dao.entities.User, org.onboardme.dao.entities.Course> markInProgress = (u, c) -> {
-                org.onboardme.dao.entities.Enrollment e = getOrCreateEnrollment.apply(u, c);
-                e.setEnrolledAt(daysAgo.apply(14));
-                e.setFinishedDate(null);
-                e.setStatus("ASIGNADO");
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(camila.getId(), cursoOnboarding.getId()), camila, cursoOnboarding,
+                                new Date(ahora.getTime() - 20 * DAY), new Date(ahora.getTime() - (20 - 6) * DAY), "FINALIZADO", false, s2)));
                 enrollmentRepository.save(e);
-            };
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(sofia.getId(), cursoOnboarding.getId()), sofia, cursoOnboarding,
+                                new Date(ahora.getTime() - 35 * DAY), new Date(ahora.getTime() - (35 - 18) * DAY), "FINALIZADO", false, s2)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(juan.getId(), cursoOnboarding.getId()), juan, cursoOnboarding,
+                                new Date(ahora.getTime() - 22 * DAY), new Date(ahora.getTime() - (22 - 9) * DAY), "FINALIZADO", false, s2)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(luis.getId(), cursoOnboarding.getId()), luis, cursoOnboarding,
+                                new Date(ahora.getTime() - 28 * DAY), new Date(ahora.getTime() - (28 - 14) * DAY), "FINALIZADO", false, s2)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoOnboarding.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mariana.getId(), cursoOnboarding.getId()), mariana, cursoOnboarding,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s1)));
+                enrollmentRepository.save(e);
+            }
 
-            // Alias para empleados
-            org.onboardme.dao.entities.User mario   = empleadosAlex.get(0);
-            org.onboardme.dao.entities.User camila  = empleadosAlex.get(1);
-            org.onboardme.dao.entities.User sofia   = empleadosAlex.get(2);
-            org.onboardme.dao.entities.User juan    = empleadosAlex.get(3);
-            org.onboardme.dao.entities.User luis    = empleadosAlex.get(4);
-            org.onboardme.dao.entities.User mariana = empleadosAlex.get(5);
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mario.getId(), cursoSeguridad.getId()), mario, cursoSeguridad,
+                                new Date(ahora.getTime() - 40 * DAY), new Date(ahora.getTime() - (40 - 20) * DAY), "FINALIZADO", false, s4)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(camila.getId(), cursoSeguridad.getId()), camila, cursoSeguridad,
+                                new Date(ahora.getTime() - 19 * DAY), new Date(ahora.getTime() - (19 - 7) * DAY), "FINALIZADO", false, s4)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(sofia.getId(), cursoSeguridad.getId()), sofia, cursoSeguridad,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s3)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(juan.getId(), cursoSeguridad.getId()), juan, cursoSeguridad,
+                                new Date(ahora.getTime() - 32 * DAY), new Date(ahora.getTime() - (32 - 14) * DAY), "FINALIZADO", false, s4)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(luis.getId(), cursoSeguridad.getId()), luis, cursoSeguridad,
+                                new Date(ahora.getTime() - 25 * DAY), new Date(ahora.getTime() - (25 - 11) * DAY), "FINALIZADO", false, s4)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoSeguridad.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mariana.getId(), cursoSeguridad.getId()), mariana, cursoSeguridad,
+                                new Date(ahora.getTime() - 18 * DAY), new Date(ahora.getTime() - (18 - 8) * DAY), "FINALIZADO", false, s4)));
+                enrollmentRepository.save(e);
+            }
 
-            // ---------- Plan de finalizaciones (duración en días, con distintos offsets) ----------
-            // Onboarding Básico: 6 usuarios con duraciones variadas
-            completeWithDuration.accept(new Object[]{ mario,   cOnboarding,   12, 30 }); // empezó hace 30d, tardó 12d
-            completeWithDuration.accept(new Object[]{ camila,  cOnboarding,    6, 20 });
-            completeWithDuration.accept(new Object[]{ sofia,   cOnboarding,   18, 35 });
-            completeWithDuration.accept(new Object[]{ juan,    cOnboarding,    9, 22 });
-            completeWithDuration.accept(new Object[]{ luis,    cOnboarding,   14, 28 });
-            markInProgress.accept(mariana, cOnboarding); // en progreso
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mario.getId(), cursoComunicacion.getId()), mario, cursoComunicacion,
+                                new Date(ahora.getTime() - 12 * DAY), new Date(ahora.getTime() - (12 - 5) * DAY), "FINALIZADO", false, s8)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(camila.getId(), cursoComunicacion.getId()), camila, cursoComunicacion,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s7)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(sofia.getId(), cursoComunicacion.getId()), sofia, cursoComunicacion,
+                                new Date(ahora.getTime() - 24 * DAY), new Date(ahora.getTime() - (24 - 11) * DAY), "FINALIZADO", false, s8)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(juan.getId(), cursoComunicacion.getId()), juan, cursoComunicacion,
+                                new Date(ahora.getTime() - 33 * DAY), new Date(ahora.getTime() - (33 - 16) * DAY), "FINALIZADO", false, s8)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(luis.getId(), cursoComunicacion.getId()), luis, cursoComunicacion,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s7)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoComunicacion.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mariana.getId(), cursoComunicacion.getId()), mariana, cursoComunicacion,
+                                new Date(ahora.getTime() - 21 * DAY), new Date(ahora.getTime() - (21 - 9) * DAY), "FINALIZADO", false, s8)));
+                enrollmentRepository.save(e);
+            }
 
-            // Seguridad y Compliance: 5 finalizados + 1 en progreso
-            completeWithDuration.accept(new Object[]{ mario,   cSeguridad,    20, 40 });
-            completeWithDuration.accept(new Object[]{ camila,  cSeguridad,     7, 19 });
-            markInProgress.accept(sofia, cSeguridad);
-            completeWithDuration.accept(new Object[]{ juan,    cSeguridad,    14, 32 });
-            completeWithDuration.accept(new Object[]{ luis,    cSeguridad,    11, 25 });
-            completeWithDuration.accept(new Object[]{ mariana, cSeguridad,     8, 18 });
-
-            // Herramientas Internas: 4 finalizados + 2 en progreso
-            completeWithDuration.accept(new Object[]{ mario,   cHerramientas,  5, 12 });
-            markInProgress.accept(camila, cHerramientas);
-            completeWithDuration.accept(new Object[]{ sofia,   cHerramientas, 11, 24 });
-            completeWithDuration.accept(new Object[]{ juan,    cHerramientas, 16, 33 });
-            markInProgress.accept(luis, cHerramientas);
-            completeWithDuration.accept(new Object[]{ mariana, cHerramientas,  9, 21 });
-
-            // Cultura Corporativa: 4 finalizados + 2 en progreso
-            completeWithDuration.accept(new Object[]{ camila,  cCultura,       6, 15 });
-            completeWithDuration.accept(new Object[]{ luis,    cCultura,      10, 23 });
-            markInProgress.accept(mario, cCultura);
-            completeWithDuration.accept(new Object[]{ mariana, cCultura,      13, 26 });
-            completeWithDuration.accept(new Object[]{ sofia,   cCultura,       9, 22 });
-            markInProgress.accept(juan, cCultura);
-
-            // Herramientas de Comunicación: 5 finalizados + 1 en progreso
-            completeWithDuration.accept(new Object[]{ mario,   cComunicacion,  7, 18 });
-            completeWithDuration.accept(new Object[]{ camila,  cComunicacion,  4, 11 });
-            completeWithDuration.accept(new Object[]{ sofia,   cComunicacion, 15, 34 });
-            markInProgress.accept(luis, cComunicacion);
-            completeWithDuration.accept(new Object[]{ juan,    cComunicacion,  9, 20 });
-            completeWithDuration.accept(new Object[]{ mariana, cComunicacion, 12, 28 });
-
-            // Log opcional para ver el id del buddy en consola
-            System.out.println("[SEED] Buddy con datos de métricas: " + buddyAlex.getEmail() + " (id=" + buddyAlex.getId() + ")");
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(camila.getId(), cursoCultura.getId()), camila, cursoCultura,
+                                new Date(ahora.getTime() - 15 * DAY), new Date(ahora.getTime() - (15 - 6) * DAY), "FINALIZADO", false, s10)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(luis.getId(), cursoCultura.getId()), luis, cursoCultura,
+                                new Date(ahora.getTime() - 23 * DAY), new Date(ahora.getTime() - (23 - 10) * DAY), "FINALIZADO", false, s10)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mario.getId(), cursoCultura.getId()), mario, cursoCultura,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s9)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(mariana.getId(), cursoCultura.getId()), mariana, cursoCultura,
+                                new Date(ahora.getTime() - 26 * DAY), new Date(ahora.getTime() - (26 - 13) * DAY), "FINALIZADO", false, s10)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(sofia.getId(), cursoCultura.getId()), sofia, cursoCultura,
+                                new Date(ahora.getTime() - 22 * DAY), new Date(ahora.getTime() - (22 - 9) * DAY), "FINALIZADO", false, s10)));
+                enrollmentRepository.save(e);
+            }
+            {
+                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoCultura.getId())
+                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
+                                new EnrollmentId(juan.getId(), cursoCultura.getId()), juan, cursoCultura,
+                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s9)));
+                enrollmentRepository.save(e);
+            }
         }
         // ===================== FIN SEED MÉTRICAS =====================
     }

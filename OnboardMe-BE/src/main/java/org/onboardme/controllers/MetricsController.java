@@ -21,8 +21,8 @@ public class MetricsController implements MetricsApi {
     public ResponseEntity<GenericMetricDTO> getMetric(
             @RequestParam("metricType") MetricTypeDTO metricType,
             @RequestParam(value = "idBuddy", required = false) Long idBuddy,
-            @RequestParam(value = "idUser",  required = false) Long idUser
+            @RequestParam(value = "idCourse", required = false) Long idCourse
     ) {
-        return ResponseEntity.ok(metricsService.getMetric(metricType, idBuddy, idUser));
+        return ResponseEntity.ok(metricsService.getMetric(metricType, idBuddy, idCourse));
     }
 }

@@ -33,11 +33,16 @@ public class UserTransformer {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
+        dto.setArea(user.getArea());
         dto.setStatus(user.getStatus());
         dto.setBuddy(buildUserResponse(user.getBuddy(), visitedIds));
         dto.setAddress(user.getAddress());
         dto.setPhone(user.getPhone());
-        dto.setBirthDate(user.getBirthDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        //dto.setBirthDate(user.getBirthDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+
+        if (user.getBirthDate() != null) {
+            dto.setBirthDate(user.getBirthDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        }
 
         if (user.getCreatedDate() != null) {
             dto.setCreatedDate(user.getCreatedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());

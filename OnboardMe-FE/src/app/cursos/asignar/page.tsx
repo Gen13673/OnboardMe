@@ -20,6 +20,8 @@ export default function AssignCoursePage() {
   const [courseSearchTerm, setCourseSearchTerm] = useState("")
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState("")
   const [isAssigning, setIsAssigning] = useState(false)
+  const [courseAreaFilter, setCourseAreaFilter] = useState<string>("all")
+  const [employeeAreaFilter, setEmployeeAreaFilter] = useState<string>("all")
 
   useEffect(() => {
     if (!user) return
@@ -28,16 +30,21 @@ export default function AssignCoursePage() {
   }, [user])
 
   // Filtrar cursos basado en el término de búsqueda
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(courseSearchTerm.toLowerCase()),
-  )
+  const filteredCourses = courses.filter((course) => {
+    const matchesSearch = course.title.toLowerCase().includes(courseSearchTerm.toLowerCase())
+    const matchesArea = courseAreaFilter === "all" || course.area === courseAreaFilter
+    return matchesSearch && matchesArea
+  })
 
   // Filtrar empleados basado en el término de búsqueda
-  const filteredMentees = mentees.filter(
-    (mentee) =>
+  const filteredMentees = mentees.filter((mentee) => {
+    const matchesSearch =
       `${mentee.firstName} ${mentee.lastName}`.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-      mentee.email.toLowerCase().includes(employeeSearchTerm.toLowerCase()),
-  )
+      mentee.email.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+
+    const matchesArea = employeeAreaFilter === "all" || mentee.area === employeeAreaFilter
+    return matchesSearch && matchesArea
+  })
 
   const selectedCourses = courses.filter((c) => selectedCourseIds.has(c.id))
 
@@ -200,6 +207,21 @@ export default function AssignCoursePage() {
                     className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all duration-300"
                   />
                 </div>
+                <select
+                  value={courseAreaFilter}
+                  onChange={(e) => setCourseAreaFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white/80 backdrop-blur"
+                >
+                  <option value="all">Todas las áreas</option>
+                  <option value="IT">IT</option>
+                  <option value="FINANZAS">Finanzas</option>
+                  <option value="SEGURIDAD">Seguridad</option>
+                  <option value="RRHH">RRHH</option>
+                  <option value="IA">IA</option>
+                  <option value="ADMINISTRATIVO">Administrativo</option>
+                  <option value="GERENCIAL">Gerencial</option>
+                  <option value="SOPORTE">Soporte</option>
+                </select>
               </div>
 
               {/* Course List */}
@@ -218,28 +240,52 @@ export default function AssignCoursePage() {
                       <div
                         key={course.id}
                         onClick={() => toggleCourse(course.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-300 ${
-                          selectedCourseIds.has(course.id)
-                            ? "bg-blue-50 border-blue-300 shadow-md"
-                            : "bg-white/60 border-gray-200 hover:bg-white/80 hover:border-gray-300"
-                        }`}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-300 ${selectedCourseIds.has(course.id)
+                          ? "bg-blue-50 border-blue-300 shadow-md"
+                          : "bg-white/60 border-gray-200 hover:bg-white/80 hover:border-gray-300"
+                          }`}
                       >
                         <div className="flex items-start space-x-3">
                           <div
-                            className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                              selectedCourseIds.has(course.id) ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
-                            }`}
+                            className={`h-10 w-10 rounded-lg flex items-center justify-center ${selectedCourseIds.has(course.id) ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
+                              }`}
                           >
                             <BookOpen className="h-5 w-5" />
                           </div>
                           <div className="flex-1">
                             <h3
-                              className={`font-medium ${
-                                selectedCourseIds.has(course.id) ? "text-blue-900" : "text-gray-900"
-                              }`}
+                              className={`font-medium ${selectedCourseIds.has(course.id) ? "text-blue-900" : "text-gray-900"
+                                }`}
                             >
                               {course.title}
                             </h3>
+                            {course.area && (
+                              <span
+                                className={`
+        inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full
+        ${course.area === "IT"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : course.area === "FINANZAS"
+                                      ? "bg-green-100 text-green-700"
+                                      : course.area === "SEGURIDAD"
+                                        ? "bg-red-100 text-red-700"
+                                        : course.area === "RRHH"
+                                          ? "bg-purple-100 text-purple-700"
+                                          : course.area === "IA"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : course.area === "ADMINISTRATIVO"
+                                              ? "bg-gray-100 text-gray-700"
+                                              : course.area === "GERENCIAL"
+                                                ? "bg-indigo-100 text-indigo-700"
+                                                : course.area === "SOPORTE"
+                                                  ? "bg-pink-100 text-pink-700"
+                                                  : "bg-gray-200 text-gray-600"
+                                  }
+      `}
+                              >
+                                {course.area}
+                              </span>
+                            )}
                             {course.description && (
                               <p className="text-sm text-gray-600 mt-1 line-clamp-2">{course.description}</p>
                             )}
@@ -310,6 +356,21 @@ export default function AssignCoursePage() {
                     className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all duration-300"
                   />
                 </div>
+                <select
+                  value={employeeAreaFilter}
+                  onChange={(e) => setEmployeeAreaFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white/80 backdrop-blur"
+                >
+                  <option value="all">Todas las áreas</option>
+                  <option value="IT">IT</option>
+                  <option value="FINANZAS">Finanzas</option>
+                  <option value="SEGURIDAD">Seguridad</option>
+                  <option value="RRHH">RRHH</option>
+                  <option value="IA">IA</option>
+                  <option value="ADMINISTRATIVO">Administrativo</option>
+                  <option value="GERENCIAL">Gerencial</option>
+                  <option value="SOPORTE">Soporte</option>
+                </select>
               </div>
 
               {/* Select All Button */}
@@ -340,11 +401,10 @@ export default function AssignCoursePage() {
                       <div
                         key={mentee.id}
                         onClick={() => toggle(mentee.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-300 ${
-                          selectedMentees.has(mentee.id)
-                            ? "bg-blue-50 border-blue-300 shadow-md"
-                            : "bg-white/60 border-gray-200 hover:bg-white/80 hover:border-gray-300"
-                        }`}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-300 ${selectedMentees.has(mentee.id)
+                          ? "bg-blue-50 border-blue-300 shadow-md"
+                          : "bg-white/60 border-gray-200 hover:bg-white/80 hover:border-gray-300"
+                          }`}
                       >
                         <div className="flex items-center space-x-4">
                           <div className="relative">
@@ -362,12 +422,38 @@ export default function AssignCoursePage() {
 
                           <div className="flex-1">
                             <h3
-                              className={`font-medium ${
-                                selectedMentees.has(mentee.id) ? "text-blue-900" : "text-gray-900"
-                              }`}
+                              className={`font-medium ${selectedMentees.has(mentee.id) ? "text-blue-900" : "text-gray-900"
+                                }`}
                             >
                               {mentee.firstName} {mentee.lastName}
                             </h3>
+                            {mentee.area && (
+                              <span
+                                className={`
+        inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full
+        ${mentee.area === "IT"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : mentee.area === "FINANZAS"
+                                      ? "bg-green-100 text-green-700"
+                                      : mentee.area === "SEGURIDAD"
+                                        ? "bg-red-100 text-red-700"
+                                        : mentee.area === "RRHH"
+                                          ? "bg-purple-100 text-purple-700"
+                                          : mentee.area === "IA"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : mentee.area === "ADMINISTRATIVO"
+                                              ? "bg-gray-100 text-gray-700"
+                                              : mentee.area === "GERENCIAL"
+                                                ? "bg-indigo-100 text-indigo-700"
+                                                : mentee.area === "SOPORTE"
+                                                  ? "bg-pink-100 text-pink-700"
+                                                  : "bg-gray-200 text-gray-600"
+                                  }
+      `}
+                              >
+                                {mentee.area}
+                              </span>
+                            )}
                             <div className="flex items-center space-x-2 mt-1">
                               <Mail className="h-4 w-4 text-gray-400" />
                               <p className="text-sm text-gray-600">{mentee.email}</p>

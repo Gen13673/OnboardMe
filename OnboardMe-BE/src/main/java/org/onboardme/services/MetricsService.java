@@ -3,113 +3,48 @@ package org.onboardme.services;
 import com.onboardme.model.DataPointDTO;
 import com.onboardme.model.GenericMetricDTO;
 import com.onboardme.model.MetricTypeDTO;
-import org.onboardme.dao.repositories.CourseRepository;
+import org.onboardme.dao.entities.Course;
+import org.onboardme.dao.entities.Enrollment;
+import org.onboardme.dao.entities.User;
 import org.onboardme.dao.repositories.EnrollmentRepository;
 import org.onboardme.dao.repositories.UserRepository;
-import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Service
 public class MetricsService {
 
-    private final CourseRepository     courseRepo;
     private final EnrollmentRepository enrollmentRepo;
-    private final UserRepository       userRepo;
+    private final UserRepository userRepo;
+    private final CoursesService coursesService;
 
-    public MetricsService(CourseRepository courseRepo,
-                          EnrollmentRepository enrollmentRepo,
-                          UserRepository userRepo) {
-        this.courseRepo     = courseRepo;
+    public MetricsService(
+            EnrollmentRepository enrollmentRepo,
+            UserRepository userRepo,
+            CoursesService coursesService
+    ) {
         this.enrollmentRepo = enrollmentRepo;
-        this.userRepo       = userRepo;
+        this.userRepo = userRepo;
+        this.coursesService = coursesService;
     }
 
-    public GenericMetricDTO getMetric(MetricTypeDTO type, Long idBuddy, Long idUser) {
+    public GenericMetricDTO getMetric(MetricTypeDTO type, Long idBuddy, Long idCourse) {
         List<DataPointDTO> points;
 
-        // Reglas de obligatoriedad
-        if (type == MetricTypeDTO.USER_PROGRESS && idUser == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "idUser es obligatorio para USER_PROGRESS");
-        }
-
-        // Modo especial: si piden AVG_COMPLETION_TIME y llega "courseId" reusando idUser,
-        // devolvemos promedio POR USUARIO para ese curso (sin crear endpoint nuevo).
-        if (type == MetricTypeDTO.AVG_COMPLETION_TIME && idUser != null) {
-            Long courseId = idUser; // alias intencional para no cambiar la firma del override
-            var rows = enrollmentRepo.findUserAvgCompletionTimeByCourseRaw(courseId, idBuddy);
-
-            var pointsLocal = new ArrayList<DataPointDTO>();
-            for (Object[] r : rows) {
-                String name = (String) r[0];
-                Number avg  = (Number) r[1];
-                pointsLocal.add(new DataPointDTO()
-                        .label(name)
-                        .value(BigDecimal.valueOf(avg != null ? avg.doubleValue() : 0.0)));
-            }
-
-            return new GenericMetricDTO()
-                    .metricType(type.name())
-                    .data(pointsLocal);
-        }
-
         switch (type) {
-            case COURSE_COMPLETION ->
-                    points = courseRepo.findCourseCompletionRatesByBuddy(idBuddy)
-                            .stream()
-                            .map(d -> new DataPointDTO()
-                                    .label(d.getCourseTitle())
-                                    .value(BigDecimal.valueOf(d.getCompletionRate())))
-                            .collect(Collectors.toList());
-
-            case AVG_COMPLETION_TIME ->
-                    points = courseRepo.findAvgCompletionTimesByBuddy(idBuddy)
-                            .stream()
-                            .map(d -> new DataPointDTO()
-                                    .label(d.getCourseTitle())
-                                    .value(BigDecimal.valueOf(d.getAverageDays())))        // averageDays ya es BigDecimal
-                            .collect(Collectors.toList());
-
-            case SECTION_DROPOFF ->
-                    points = enrollmentRepo.findSectionDropoffRatesByBuddy(idBuddy)
-                            .stream()
-                            .map(d -> new DataPointDTO()
-                                    .label(d.getSectionTitle())
-                                    .value(BigDecimal.valueOf(d.getDropoffRate())))
-                            .collect(Collectors.toList());
-
-            case BUDDY_COVERAGE -> {
-                var bc = userRepo.findBuddyCoverage();
-                points = List.of(
-                        new DataPointDTO().label("Cobertura (%)")
-                                .value(BigDecimal.valueOf(bc.getCoveragePercent())),
-                        new DataPointDTO().label("Prom. Mentees")
-                                .value(BigDecimal.valueOf(bc.getAverageMentees()))
-                );
-            }
-
-            case USER_PROGRESS ->
-                    points = enrollmentRepo.findCourseProgressByUser(idUser)
-                            .stream()
-                            .map(d -> new DataPointDTO()
-                                    .label(d.getCourseTitle())
-                                    .value(BigDecimal.valueOf(d.getProgressPercent())))
-                            .collect(Collectors.toList());
-
             case COURSE_USER_PROGRESS -> {
-                if (idUser == null) {
+                if (idCourse == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "idUser (courseId) es obligatorio para COURSE_USER_PROGRESS");
                 }
-                var enrollments = enrollmentRepo.findByCourseAndOptionalBuddy(idUser, idBuddy);
+                var enrollments = enrollmentRepo.findByCourseAndOptionalBuddy(idCourse, idBuddy);
 
-                // total de secciones del curso (para porcentajes)
                 final long totalSections = Math.max(1L, enrollments.stream()
                         .findFirst()
                         .map(e -> (long) (e.getCourse() != null && e.getCourse().getSections() != null
@@ -124,7 +59,6 @@ public class MetricsService {
                     } else if (e.getSection() == null) {
                         pct = 0.0;
                     } else {
-                        // 'order' es String: parseamos a int para calcular posición
                         int currentOrder = 0;
                         try { currentOrder = Integer.parseInt(e.getSection().getOrder()); } catch (Exception ignore) {}
                         pct = Math.max(0.0, Math.min(100.0, (currentOrder * 100.0) / totalSections));
@@ -137,11 +71,11 @@ public class MetricsService {
             }
 
             case COURSE_USER_ELAPSED_DAYS -> {
-                if (idUser == null) {
+                if (idCourse == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "idUser (courseId) es obligatorio para COURSE_USER_ELAPSED_DAYS");
                 }
-                var enrollments = enrollmentRepo.findByCourseAndOptionalBuddy(idUser, idBuddy);
+                var enrollments = enrollmentRepo.findByCourseAndOptionalBuddy(idCourse, idBuddy);
                 long now = System.currentTimeMillis();
 
                 points = enrollments.stream().map(e -> {
@@ -158,11 +92,116 @@ public class MetricsService {
                 }).collect(Collectors.toList());
             }
 
+            case USER_COURSE_COMPLETION -> {
+                List<User> users = (idBuddy != null)
+                        ? userRepo.findByBuddyId(idBuddy)
+                        : userRepo.findAll();
+
+                users = users.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+                class UItem {
+                    long userId;
+                    String fullName;
+                    int completed;
+                    int total;
+                    double pct; // 0..100
+                    List<Enrollment> enrollments;
+                }
+
+                List<UItem> items = new ArrayList<>();
+
+                for (User u : users) {
+                    List<Enrollment> enrolls = u.getEnrollments();
+                    if (enrolls == null) enrolls = List.of();
+
+                    int total = enrolls.size();
+                    int completed = 0;
+
+                    for (Enrollment e : enrolls) {
+                        double p = 0.0;
+                        try {
+                            Course c = e.getCourse();
+                            if (c != null) {
+                                p = safeProgress(c.getId(), u.getId());
+                            }
+                        } catch (Exception ignore) {}
+                        boolean done = isCompletedByRule(e, p);
+                        if (done) completed++;
+                    }
+
+                    UItem it = new UItem();
+                    it.userId = u.getId();
+                    it.fullName = ((u.getFirstName() == null ? "" : u.getFirstName()) + " " +
+                            (u.getLastName() == null ? "" : u.getLastName())).trim();
+                    it.total = total;
+                    it.completed = completed;
+                    it.pct = (total > 0) ? (completed * 100.0 / total) : 0.0;
+                    it.enrollments = enrolls;
+
+                    items.add(it);
+                }
+
+                items.sort(Comparator
+                        .comparing((UItem x) -> x.completed == x.total ? 1 : 0)
+                        .thenComparingDouble(x -> x.pct)
+                        .thenComparing(x -> x.fullName == null ? "" : x.fullName.toLowerCase(Locale.ROOT)));
+
+                int completedAll = (int) items.stream().filter(i -> i.total > 0 && i.completed == i.total).count();
+                int notCompletedAll = (int) items.stream().filter(i -> i.total == 0 || i.completed < i.total).count();
+
+                List<DataPointDTO> out = new ArrayList<>();
+                out.add(new DataPointDTO().label("SUMMARY_COMPLETED_ALL").value(BigDecimal.valueOf(completedAll)));
+                out.add(new DataPointDTO().label("SUMMARY_NOT_COMPLETED_ALL").value(BigDecimal.valueOf(notCompletedAll)));
+
+                for (UItem it : items) {
+                    out.add(new DataPointDTO()
+                            .label("USER|" + it.userId + "|" + esc(it.fullName) + "|" + it.completed + "|" + it.total)
+                            .value(BigDecimal.valueOf(Math.round(Math.max(0, Math.min(100, it.pct))))));
+
+                    if (it.total == 0 || it.completed < it.total) {
+                        for (Enrollment e : it.enrollments) {
+                            double p = 0.0;
+                            Course c = e.getCourse();
+                            if (c == null) continue;
+                            try { p = safeProgress(c.getId(), it.userId); } catch (Exception ignore) {}
+                            if (!isCompletedByRule(e, p)) {
+                                out.add(new DataPointDTO()
+                                        .label("MISSING|" + it.userId + "|" + c.getId() + "|" + esc(c.getTitle()))
+                                        .value(BigDecimal.valueOf(Math.round(Math.max(0, Math.min(100, p))))));
+                            }
+                        }
+                    }
+                }
+
+                points = out;
+            }
+
             default -> throw new IllegalArgumentException("Métrica no soportada: " + type);
         }
 
         return new GenericMetricDTO()
                 .metricType(type.name())
                 .data(points);
+    }
+
+    private boolean isCompletedByRule(Enrollment e, double courseProgressPct) {
+        if (e.getFinishedDate() != null) return true;
+        String status = e.getStatus();
+        if (status != null && "COMPLETADO".equalsIgnoreCase(status.trim())) return true;
+        return courseProgressPct >= 100.0;
+    }
+
+    private double safeProgress(Long courseId, Long userId) {
+        try {
+            Double v = coursesService.getCourseProgress(courseId, userId);
+            return v == null ? 0.0 : v;
+        } catch (EntityNotFoundException ex) {
+            return 0.0;
+        }
+    }
+
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("|", "¦");
     }
 }

@@ -429,7 +429,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/metricType'
         - $ref: '#/components/parameters/idBuddyQuery'
-        - $ref: '#/components/parameters/idUserQuery'
+        - $ref: '#/components/parameters/idCourseQuery'
       responses:
         '200':
           description: Datos de la métrica solicitada
@@ -539,11 +539,11 @@ components:
       schema:
         type: integer
         format: int64
-    idUserQuery:
-      name: idUser
+    idCourseQuery:
+      name: idCourse
       in: query
       required: false
-      description: Id of the user (query param para métricas)
+      description: Id of the course (query param para métricas)
       schema:
         type: integer
         format: int64
@@ -566,6 +566,8 @@ components:
         lastName:
           type: string
         email:
+          type: string
+        area:
           type: string
         createdDate:
           type: string
@@ -602,6 +604,8 @@ components:
         title:
           type: string
         description:
+          type: string
+        area:
           type: string
         createdDate:
           type: string
@@ -765,16 +769,13 @@ components:
       type: string
       description: Enum de tipos de métricas
       enum:
-        - COURSE_COMPLETION
-        - AVG_COMPLETION_TIME
-        - SECTION_DROPOFF
-        - BUDDY_COVERAGE
-        - USER_PROGRESS
-        - ENROLLMENTS_TREND
-        - COMPLETIONS_TREND
         - COURSE_USER_PROGRESS
         - COURSE_USER_ELAPSED_DAYS
-
+        - USER_COURSE_COMPLETION
+      x-enum-varnames:
+        - COURSE_USER_PROGRESS
+        - COURSE_USER_ELAPSED_DAYS
+        - USER_COURSE_COMPLETION
 
     DataPointDTO:
       type: object
@@ -793,61 +794,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DataPointDTO'
-
-    CourseCompletionDTO:
-      type: object
-      properties:
-        courseId:
-          type: integer
-          format: int64
-        courseTitle:
-          type: string
-        completionRate:
-          type: number
-          format: double
-
-    TimeToCompleteDTO:
-      type: object
-      properties:
-        courseId:
-          type: integer
-          format: int64
-        courseTitle:
-          type: string
-        averageDays:
-          type: number
-          format: double
-
-    SectionDropoffDTO:
-      type: object
-      properties:
-        sectionId:
-          type: integer
-          format: int64
-        sectionTitle:
-          type: string
-        dropoffRate:
-          type: number
-          format: double
-
-    UserProgressDTO:
-      type: object
-      properties:
-        courseTitle:
-          type: string
-        progressPercent:
-          type: number
-          format: double
-
-    BuddyCoverageDTO:
-      type: object
-      properties:
-        coveragePercent:
-          type: number
-          format: double
-        averageMentees:
-          type: number
-          format: double
 
     ExamSubmissionDTO:
       type: object

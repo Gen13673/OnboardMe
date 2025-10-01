@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const fetchUser = async () => {
-            const user = await getUserById(13);
+            const user = await getUserById(9);
             setUser(user);
         };
 

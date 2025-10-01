@@ -8,8 +8,6 @@ import org.onboardme.transformers.UserTransformer;
 import org.onboardme.dao.entities.User;
 import org.onboardme.dao.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -99,6 +97,7 @@ public class UserService {
                     email = columns[2].trim();
                     String password = columns[3].trim();
                     String roleName = columns[4].trim();
+                    String areaName = columns[5].trim();
 
                     // 🚨 Validación: Email ya existente
                     if (userRepository.findByEmail(email).isPresent()) {
@@ -110,6 +109,7 @@ public class UserService {
                     user.setLastName(lastName);
                     user.setEmail(email);
                     user.setPassword(password);
+                    user.setArea(areaName);
                     user.setStatus(1);
 
                     Role role = roleRepository.findByName(roleName)

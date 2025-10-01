@@ -40,7 +40,11 @@ export default function OnboardingManagement() {
   const [csvErrors, setCsvErrors] = useState<string[]>([])
   const [csvLogs, setCsvLogs] = useState<{ line: number, message: string, success: boolean }[]>([]);
 
-
+  useEffect(() => {
+    if (selectedEmployees.size === 0 && isAssignBuddyOpen) {
+      setIsAssignBuddyOpen(false)
+    }
+  }, [selectedEmployees.size, isAssignBuddyOpen])
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -334,9 +338,9 @@ export default function OnboardingManagement() {
                 variant="outline"
                 onClick={() => {
                   const exampleCsv =
-                    "Nombre,Apellido,Email,Contrasenia,Id_Rol\n" +
-                    "Juan,Pérez,juan.perez@empresa.com,Password123,Empleado\n" +
-                    "María,Gómez,maria.gomez@empresa.com,Password456,Buddy\n";
+                    "Nombre,Apellido,Email,Contrasenia,Id_Rol,Area\n" +
+                    "Juan,Pérez,juan.perez@empresa.com,Password123,Empleado,IT\n" +
+                    "María,Gómez,maria.gomez@empresa.com,Password456,Buddy,SEGURIDAD\n";
                   const blob = new Blob([exampleCsv], { type: "text/csv;charset=utf-8;" });
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement("a");
@@ -448,41 +452,59 @@ export default function OnboardingManagement() {
                 )}
               </div>
 
-              {selectedEmployees.size > 0 && (
-                <Dialog open={isAssignBuddyOpen} onOpenChange={setIsAssignBuddyOpen}>
+                <Dialog
+                  open={isAssignBuddyOpen}
+                  onOpenChange={(open) => {
+                    // No permitir abrir si no hay seleccionados
+                    if (selectedEmployees.size === 0) return
+                    setIsAssignBuddyOpen(open)
+                  }}
+                >
                   <DialogTrigger asChild>
-                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                    <Button
+                      disabled={selectedEmployees.size === 0}
+                      className={
+                        selectedEmployees.size === 0
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                      }
+                    >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Asignar Buddy a Seleccionados
                     </Button>
                   </DialogTrigger>
+
                   <DialogContent className="bg-white/95 backdrop-blur-xl border-0 shadow-2xl">
                     <DialogHeader>
                       <DialogTitle className="text-xl font-semibold">
-                        Asignar Buddy a {selectedEmployees.size} Empleado{selectedEmployees.size > 1 ? 's' : ''}
+                        Asignar Buddy a {selectedEmployees.size} Empleado{selectedEmployees.size > 1 ? "s" : ""}
                       </DialogTitle>
                       <DialogDescription className="text-gray-600">
                         Selecciona un buddy para asignar a todos los empleados seleccionados
                       </DialogDescription>
                     </DialogHeader>
+
                     <div className="space-y-6 pt-4">
                       {/* Lista de empleados seleccionados */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Empleados seleccionados:</Label>
                         <div className="max-h-32 overflow-y-auto bg-gray-50 rounded-lg p-3 space-y-2">
-                          {employees?.filter(emp => selectedEmployees.has(emp.id)).map(employee => (
+                          {employees?.filter((emp) => selectedEmployees.has(emp.id)).map((employee) => (
                             <div key={employee.id} className="flex items-center space-x-2 text-sm">
-                              <div className="h-6 w-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                              <div className="h-6 w-6 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
                                 <span className="text-white text-xs font-bold">
                                   {getInitials(employee.firstName, employee.lastName)}
                                 </span>
                               </div>
-                              <span>{employee.firstName} {employee.lastName}</span>
+                              <span>
+                                {employee.firstName} {employee.lastName}
+                              </span>
                             </div>
                           ))}
                         </div>
                       </div>
 
+                      {/* Selector de Buddy */}
                       <div className="space-y-2">
                         <Label htmlFor="buddy" className="text-sm font-medium">
                           Buddy a Asignar
@@ -495,6 +517,7 @@ export default function OnboardingManagement() {
                         />
                       </div>
 
+                      {/* Acciones */}
                       <div className="flex justify-end gap-3 pt-4">
                         <Button
                           variant="outline"
@@ -517,7 +540,6 @@ export default function OnboardingManagement() {
                     </div>
                   </DialogContent>
                 </Dialog>
-              )}
             </div>
 
             <div className="space-y-4">
