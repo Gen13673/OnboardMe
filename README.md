@@ -7,4 +7,4 @@ OnboardMe es una **plataforma de onboarding** para empresas que permite crear cu
 - **Exámenes** (opción múltiple y múltiples respuestas correctas)
 - **Generación asistida por IA** de preguntas de examen
 - **Métricas / KPIs** por curso, usuario y rol
-- **Roles y permisos** (admin, buddy, usuario) con validaciones de negocio
+- **Roles y permisos** (admin, RRHH, buddy, empleado) con validaciones de negocio
