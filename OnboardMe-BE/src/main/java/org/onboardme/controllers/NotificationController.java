@@ -27,4 +27,10 @@ public class NotificationController implements NotificationsApi {
         NotificationDTO updated = notificationService.markNotificationAsRead(idNotification);
         return ResponseEntity.ok(updated);
     }
+
+    @Override
+    public ResponseEntity<Void> createNotification(NotificationDTO notificationDTO) {
+        notificationService.createNotification(notificationDTO);
+        return ResponseEntity.ok().build();
+    }
 }

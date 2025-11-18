@@ -1,10 +1,20 @@
 package org.onboardme.config;
 
+import com.onboardme.model.SurveyQuestionResultDTO;
 import jakarta.annotation.PostConstruct;
 import org.onboardme.dao.entities.*;
 import org.onboardme.dao.repositories.*;
+import org.onboardme.services.PasswordService;
 import org.springframework.context.annotation.Configuration;
 import org.onboardme.dao.entities.content.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.onboardme.dao.repositories.ExamResultRepository;
+import com.onboardme.model.ExamQuestionResultDTO;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.concurrent.ThreadLocalRandom;
 
 import java.util.Date;
 import java.util.List;
@@ -18,23 +28,38 @@ public class DataInitializer {
     private final SectionRepository sectionRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final SectionContentRepository sectionContentRepository;
+    private final PasswordService passwordService;
+    private final ExamResultRepository examResultRepository;
+    private final ObjectMapper objectMapper;
+    private final SurveyResultRepository surveyResultRepository;
+
 
     public DataInitializer(RoleRepository roleRepository,
                            UserRepository userRepository,
                            CourseRepository courseRepository,
                            SectionRepository sectionRepository,
                            EnrollmentRepository enrollmentRepository,
-                           SectionContentRepository sectionContentRepository) {
+                           SectionContentRepository sectionContentRepository,
+                           PasswordService passwordService,
+                           ExamResultRepository examResultRepository,
+                           SurveyResultRepository surveyResultRepository,
+                           ObjectMapper objectMapper) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.sectionRepository = sectionRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.sectionContentRepository = sectionContentRepository;
+        this.passwordService = passwordService;
+        this.examResultRepository = examResultRepository;
+        this.surveyResultRepository = surveyResultRepository;
+        this.objectMapper = objectMapper;
     }
 
     @PostConstruct
     public void init() {
+
+        final long DAY = 1000L * 60 * 60 * 24;
         // ---------- ROLES ----------
         Role admin = roleRepository.findByName("Admin")
                 .orElseGet(() -> roleRepository.save(new Role(null, "Admin", null)));
@@ -52,55 +77,157 @@ public class DataInitializer {
         Date fechaAlta = new Date();
         User buddyUser = userRepository.findByEmail("mauro.buddy@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Mauro", "López", "mauro.buddy@empresa.com", "buddy123", "IT", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, buddy, null, null, null )));
+                        new User(null, "Mauro", "López", "mauro.buddy@empresa.com", passwordService.hashPassword("buddy123"), "IT", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, buddy, null, null, null )));
 
         User buddyUser2 = userRepository.findByEmail("sofia.buddy@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Sofía", "Martínez", "sofia.buddy@empresa.com", "buddy123", "IT", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, buddy, null, null, null)));
+                        new User(null, "Sofía", "Martínez", "sofia.buddy@empresa.com", passwordService.hashPassword("buddy123"), "IT", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, buddy, null, null, null)));
 
         User buddyUser3 = userRepository.findByEmail("lucia.buddy@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Lucía", "Diaz", "lucia.buddy@empresa.com", "buddy123", "SEGURIDAD", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, buddy, null, null, null)));
+                        new User(null, "Lucía", "Diaz", "lucia.buddy@empresa.com", passwordService.hashPassword("buddy123"), "SEGURIDAD", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, buddy, null, null, null)));
 
         User employeeUser = userRepository.findByEmail("laura.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Laura", "Fernández", "laura.empleado@empresa.com", "empleado123", "SOPORTE", fechaAlta, 1,"pepito 123", "556482256", fechaAlta,  empleado, null, null, buddyUser)));
+                        new User(null, "Laura", "Fernández", "laura.empleado@empresa.com", passwordService.hashPassword("buddy123"), "SOPORTE", fechaAlta, 1,"pepito 123", "556482256", fechaAlta,  empleado, null, null, buddyUser)));
 
         User employeeUser2 = userRepository.findByEmail("juan.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Juan", "Pérez", "juan.empleado@empresa.com", "empleado123", "GERENCIA", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser2)));
+                        new User(null, "Juan", "Pérez", "juan.empleado@empresa.com", passwordService.hashPassword("empleado123"), "GERENCIA", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser2)));
 
         User employeeUser3 = userRepository.findByEmail("mariana.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Mariana", "Suárez", "mariana.empleado@empresa.com", "empleado123", "GERENCIA", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser2)));
+                        new User(null, "Mariana", "Suárez", "mariana.empleado@empresa.com", passwordService.hashPassword("empleado123"), "GERENCIA", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser2)));
 
         User employeeUser4 = userRepository.findByEmail("carlos.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Carlos", "Ibarra", "carlos.empleado@empresa.com", "empleado123", "IT", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser3)));
+                        new User(null, "Carlos", "Ibarra", "carlos.empleado@empresa.com", passwordService.hashPassword("empleado123"), "IT", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser3)));
 
         User employeeUser5 = userRepository.findByEmail("emma.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Emma", "Torres", "emma.empleado@empresa.com", "empleado123", "SEGURIDAD", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser3)));
+                        new User(null, "Emma", "Torres", "emma.empleado@empresa.com", passwordService.hashPassword("empleado123"), "SEGURIDAD", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, empleado, null, null, buddyUser3)));
 
         User adminUser = userRepository.findByEmail("carlos.admin@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Carlos", "Ramírez", "carlos.admin@empresa.com", "admin123", "ADMINISTRATIVO", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, admin, null, null, buddyUser)));
+                        new User(null, "Carlos", "Ramírez", "carlos.admin@empresa.com", passwordService.hashPassword("admin123"), "ADMINISTRATIVO", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, admin, null, null, buddyUser)));
 
         User adminUser2 = userRepository.findByEmail("maria.admin@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "María", "Núñez", "maria.admin@empresa.com", "admin123", "ADMINISTRATIVO", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, admin, null, null, buddyUser3)));
+                        new User(null, "María", "Núñez", "maria.admin@empresa.com", passwordService.hashPassword("admin123"), "ADMINISTRATIVO", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, admin, null, null, buddyUser3)));
 
-        User rrhhUser = userRepository.findByEmail("ana.rrhh@empresa.com")
+        User rrhhUser = userRepository.findByEmail("ofasciolo@frba.utn.edu.ar")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Ana", "Gómez", "ana.rrhh@empresa.com", "rrhh123", "RRHH", fechaAlta, 1, "pepito 123", "1152423356", fechaAlta, rrhh, null, null, buddyUser)));
+                        new User(null, "Ornella", "Fasciolo", "ofasciolo@frba.utn.edu.ar", passwordService.hashPassword("rrhh123"), "RRHH", fechaAlta, 1, "pepito 123", "1156183224", fechaAlta, rrhh, null, null, buddyUser)));
 
         User rrhhUser2 = userRepository.findByEmail("diego.rrhh@empresa.com")
                 .orElseGet(() -> userRepository.save(
-                        new User(null, "Diego", "López", "diego.rrhh@empresa.com", "rrhh123", "RRHH", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, rrhh, null, null, buddyUser)));
+                        new User(null, "Diego", "López", "diego.rrhh@empresa.com", passwordService.hashPassword("rrhh123"), "RRHH", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, rrhh, null, null, buddyUser)));
+
+        // ---- Para Mauro agregamos 4 más ----
+        userRepository.findByEmail("andres.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Andrés", "Molina", "andres.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser)));
+
+        userRepository.findByEmail("valentina.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Valentina", "Prieto", "valentina.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser)));
+
+        userRepository.findByEmail("martin.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Martín", "Quiroga", "martin.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser)));
+
+        userRepository.findByEmail("celeste.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Celeste", "Sosa", "celeste.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser)));
+
+        userRepository.findByEmail("tomas.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Tomás", "Iglesias", "tomas.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser)));
+
+
+        // ---- Para Sofía agregamos 4 más ----
+        userRepository.findByEmail("agustina.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Agustina", "Vega", "agustina.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser2)));
+
+        userRepository.findByEmail("pablo.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Pablo", "Rossi", "pablo.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser2)));
+
+        userRepository.findByEmail("camila.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Camila", "Benítez", "camila.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser2)));
+
+        userRepository.findByEmail("sebastian.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Sebastián", "Mansilla", "sebastian.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser2)));
+
+
+        // ---- Para Lucía agregamos 4 más ----
+        userRepository.findByEmail("bruno.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Bruno", "Luna", "bruno.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser3)));
+
+        userRepository.findByEmail("malena.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Malena", "Paredes", "malena.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser3)));
+
+        userRepository.findByEmail("ignacio.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Ignacio", "Serrano", "ignacio.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser3)));
+
+        userRepository.findByEmail("florencia.empleado@empresa.com")
+                .orElseGet(() -> userRepository.save(
+                        new User(null, "Florencia", "Maidana", "florencia.empleado@empresa.com",
+                                passwordService.hashPassword("empleado123"),
+                                "IT", fechaAlta, 1, "Direccion 123", "1152423356", fechaAlta,
+                                empleado, null, null, buddyUser3)));
 
         // ---------- CURSOS ----------
         Date ahora = new Date();
         Date dentroDeUnMes = new Date(ahora.getTime() + (1000L * 60 * 60 * 24 * 30));
+        LocalDate localDateAyer = LocalDate.now().minusDays(1);
+        Date ayer = Date.from(localDateAyer.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        LocalDate localDateManana = LocalDate.now().plusDays(1);
+        Date manana = Date.from(localDateManana.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
 
         Course cursoInicial = courseRepository.findByTitle("Curso Inicial")
                 .orElseGet(() -> courseRepository.save(
@@ -112,11 +239,11 @@ public class DataInitializer {
 
         Course cursoSeguridad = courseRepository.findByTitle("Seguridad Informática")
                 .orElseGet(() -> courseRepository.save(
-                        new Course(null, "Seguridad Informática", "Buenas prácticas de seguridad digital dentro de la organización.", "SEGURIDAD", ahora, dentroDeUnMes, buddyUser, null, null)));
+                        new Course(null, "Seguridad Informática", "Buenas prácticas de seguridad digital dentro de la organización.", "SEGURIDAD", ahora, ayer, buddyUser, null, null)));
 
         Course cursoRRHH = courseRepository.findByTitle("Políticas de RRHH")
                 .orElseGet(() -> courseRepository.save(
-                        new Course(null, "Políticas de RRHH", "Conoce las políticas y beneficios de la empresa.", "RRHH", ahora, dentroDeUnMes, rrhhUser, null, null)));
+                        new Course(null, "Políticas de RRHH", "Conoce las políticas y beneficios de la empresa.", "RRHH", ahora, manana, rrhhUser, null, null)));
 
         Course cursoComunicacion = courseRepository.findByTitle("Herramientas de Comunicación")
                 .orElseGet(() -> courseRepository.save(
@@ -130,78 +257,94 @@ public class DataInitializer {
                 .orElseGet(() -> courseRepository.save(
                         new Course(null, "Salud Ocupacional", "Principios básicos de salud y seguridad laboral.", "SEGURIDAD", ahora, dentroDeUnMes, rrhhUser2, null, null)));
 
+        Course cursoJava = courseRepository.findByTitle("Introducción a Java")
+                .orElseGet(() -> courseRepository.save(
+                        new Course(null, "Introducción a Java", "Principios básicos de programación en java.", "IT", ahora, dentroDeUnMes, rrhhUser, null, null)));
+
         // ---------- SECCIONES (orden en cada curso) ----------
-        Section s1 = sectionRepository.findByTitle("Bienvenida")
+        Section s1 = sectionRepository.findByCourseIdAndTitle(cursoOnboarding.getId(), "Bienvenida")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Bienvenida", "1", cursoOnboarding, null,null)));
 
-        Section s2 = sectionRepository.findByTitle("Historia de la empresa")
+        Section s2 = sectionRepository.findByCourseIdAndTitle(cursoOnboarding.getId(), "Historia de la empresa")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Historia de la empresa", "2", cursoOnboarding, null, null)));
 
-        Section s3 = sectionRepository.findByTitle("Contraseñas seguras")
+        Section s3 = sectionRepository.findByCourseIdAndTitle(cursoSeguridad.getId(), "Contraseñas seguras")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Contraseñas seguras", "1", cursoSeguridad, null, null)));
 
-        Section s4 = sectionRepository.findByTitle("Correo corporativo")
+        Section s4 = sectionRepository.findByCourseIdAndTitle(cursoSeguridad.getId(), "Correo corporativo")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Correo corporativo", "2", cursoSeguridad, null, null)));
 
-        Section s5 = sectionRepository.findByTitle("Vacaciones y licencias")
+        Section s5 = sectionRepository.findByCourseIdAndTitle(cursoRRHH.getId(), "Vacaciones y licencias")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Vacaciones y licencias", "1", cursoRRHH, null, null)));
 
-        Section s6 = sectionRepository.findByTitle("Beneficios corporativos")
+        Section s6 = sectionRepository.findByCourseIdAndTitle(cursoRRHH.getId(), "Beneficios corporativos")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Beneficios corporativos", "2", cursoRRHH, null, null)));
 
-        Section s7 = sectionRepository.findByTitle("Uso de Slack")
+        Section s7 = sectionRepository.findByCourseIdAndTitle(cursoComunicacion.getId(), "Uso de Slack")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Uso de Slack", "1", cursoComunicacion, null, null)));
 
-        Section s8 = sectionRepository.findByTitle("Reuniones efectivas")
+        Section s8 = sectionRepository.findByCourseIdAndTitle(cursoComunicacion.getId(), "Reuniones efectivas")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Reuniones efectivas", "2", cursoComunicacion, null, null)));
 
-        Section s9 = sectionRepository.findByTitle("Valores y misión")
+        Section s9 = sectionRepository.findByCourseIdAndTitle(cursoCultura.getId(), "Valores y misión")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Valores y misión", "1", cursoCultura, null, null)));
 
-        Section s10 = sectionRepository.findByTitle("Historia reciente")
+        Section s10 = sectionRepository.findByCourseIdAndTitle(cursoCultura.getId(), "Historia reciente")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Historia reciente", "2", cursoCultura, null, null)));
 
-        Section s11 = sectionRepository.findByTitle("Ergonomía en el trabajo")
+        Section s11 = sectionRepository.findByCourseIdAndTitle(cursoSalud.getId(), "Ergonomía en el trabajo")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Ergonomía en el trabajo", "1", cursoSalud, null, null)));
 
-        Section s12 = sectionRepository.findByTitle("Prevención de lesiones")
+        Section s12 = sectionRepository.findByCourseIdAndTitle(cursoSalud.getId(), "Prevención de lesiones")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Prevención de lesiones", "2", cursoSalud, null, null)));
 
-        Section s13 = sectionRepository.findByTitle("Introducción a la plataforma")
+        Section s13 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Introducción a la plataforma")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Introducción a la plataforma", "1", cursoInicial, null, null)));
 
-        Section s14 = sectionRepository.findByTitle("Navegación básica")
+        Section s14 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Navegación básica")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Navegación básica", "2", cursoInicial, null, null)));
 
-        Section s15 = sectionRepository.findByTitle("Recursos de aprendizaje")
+        Section s15 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Recursos de aprendizaje")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Recursos de aprendizaje", "3", cursoInicial, null, null)));
 
-        Section s16 = sectionRepository.findByTitle("Herramientas esenciales")
+        Section s16 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Herramientas esenciales")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Herramientas esenciales", "4", cursoInicial, null, null)));
 
-        Section s17 = sectionRepository.findByTitle("Políticas clave")
+        Section s17 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Políticas clave")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Políticas clave", "5", cursoInicial, null, null)));
 
-        Section s18 = sectionRepository.findByTitle("Resumen y próximos pasos")
+        Section s18 = sectionRepository.findByCourseIdAndTitle(cursoInicial.getId(), "Resumen y próximos pasos")
                 .orElseGet(() -> sectionRepository.save(
                         new Section(null, "Resumen y próximos pasos", "6", cursoInicial, null, null)));
+
+        Section s19 = sectionRepository.findByCourseIdAndTitle(cursoJava.getId(), "Introducción a la programación en Java")
+                .orElseGet(() -> sectionRepository.save(
+                        new Section(null, "Introducción a la programación en Java", "1", cursoJava, null, null)));
+
+        Section s20 = sectionRepository.findByCourseIdAndTitle(cursoJava.getId(), "Spring Boot en Java")
+                .orElseGet(() -> sectionRepository.save(
+                        new Section(null, "Spring Boot en Java", "2", cursoJava, null, null)));
+
+        Section s21 = sectionRepository.findByCourseIdAndTitle(cursoJava.getId(), "Exámen Java")
+                .orElseGet(() -> sectionRepository.save(
+                        new Section(null, "Exámen Java", "3", cursoJava, null, null)));
 
         // Actualizar cursos con secciones
         cursoOnboarding.setSections(List.of(s1, s2));
@@ -224,6 +367,9 @@ public class DataInitializer {
 
         cursoInicial.setSections(List.of(s13, s14, s15, s16, s17, s18));
         courseRepository.save(cursoInicial);
+
+        cursoJava.setSections(List.of(s19, s20, s21));
+        courseRepository.save(cursoJava);
 
         // ---------- CONTENIDOS DE SECCIONES ----------
         if (s1.getContent() == null) {
@@ -462,78 +608,97 @@ public class DataInitializer {
             s18.setContent(c18);
             sectionContentRepository.save(c18);
         }
+        if (s19.getContent() == null) {
+            DocumentContent c19 = new DocumentContent();
+            c19.setUrl("https://drive.google.com/file/d/1kiQuXL6AA6P9cFaC2jf-gGfE3NFsWbbG/view?usp=sharing");
+            c19.setSection(s19);
+            s19.setContent(c19);
+            sectionContentRepository.save(c19);
+        }
+        if (s20.getContent() == null) {
+            VideoContent c20 = new VideoContent();
+            c20.setUrl("https://www.youtube.com/watch?v=3vN2R00YUq4");
+            c20.setSection(s20);
+            s20.setContent(c20);
+            sectionContentRepository.save(c20);
+        }
 
-        // ---------- ENROLLMENTS ----------
-        EnrollmentId enrollmentId1 = new EnrollmentId(employeeUser.getId(), cursoOnboarding.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser.getId(), cursoOnboarding.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId1, employeeUser, cursoOnboarding, ahora, null, "ASIGNADO", true, s1)));
+        if (s21.getContent() == null) {
+            ExamContent c21 = new ExamContent();
+            c21.setTimeLimit(10);
 
-        EnrollmentId enrollmentId2 = new EnrollmentId(employeeUser.getId(), cursoSeguridad.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser.getId(), cursoSeguridad.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId2, employeeUser, cursoSeguridad, ahora, null, "ASIGNADO", false, s3)));
+            ExamQuestion q21_1 = new ExamQuestion();
+            q21_1.setType(QuestionType.SINGLE_CHOICE);
+            q21_1.setText("¿Cuál es el objetivo principal de una reunión efectiva?");
+            ExamOption o21_11 = new ExamOption(); o21_11.setText("Tomar decisiones y/o alinear al equipo con un objetivo claro"); o21_11.setCorrect(true);
+            ExamOption o21_12 = new ExamOption(); o21_12.setText("Llenar el tiempo y socializar"); o21_12.setCorrect(false);
+            ExamOption o21_13 = new ExamOption(); o21_13.setText("Repetir información que podría enviarse por email"); o21_13.setCorrect(false);
+            q21_1.setOptions(List.of(o21_11, o21_12, o21_13));
 
-        EnrollmentId enrollmentId3 = new EnrollmentId(employeeUser.getId(), cursoRRHH.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser.getId(), cursoRRHH.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId3, employeeUser, cursoRRHH, ahora, null, "ASIGNADO", false, s5)));
+            ExamQuestion q21_2 = new ExamQuestion();
+            q21_2.setType(QuestionType.MULTIPLE_CHOICE);
+            q21_2.setText("¿Qué elementos debe incluir una agenda de reunión?");
+            ExamOption o21_21 = new ExamOption(); o21_21.setText("Temas con tiempo estimado"); o21_21.setCorrect(true);
+            ExamOption o21_22 = new ExamOption(); o21_22.setText("Responsables por tema"); o21_22.setCorrect(true);
+            ExamOption o21_23 = new ExamOption(); o21_23.setText("Chistes para romper el hielo"); o21_23.setCorrect(false);
+            q21_2.setOptions(List.of(o21_21, o21_22, o21_23));
 
-        EnrollmentId enrollmentId4 = new EnrollmentId(employeeUser.getId(), cursoComunicacion.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser.getId(), cursoComunicacion.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId4, employeeUser, cursoComunicacion, ahora, null, "ASIGNADO", false, s7)));
+            ExamQuestion q21_3 = new ExamQuestion();
+            q21_3.setType(QuestionType.SINGLE_CHOICE);
+            q21_3.setText("Si la conversación se desvía del tema, ¿qué conviene hacer?");
+            ExamOption o21_31 = new ExamOption(); o21_31.setText("Registrar el tema en un 'parking lot' y volver a la agenda"); o21_31.setCorrect(true);
+            ExamOption o21_32 = new ExamOption(); o21_32.setText("Seguir el desvío hasta que se resuelva"); o21_32.setCorrect(false);
+            ExamOption o21_33 = new ExamOption(); o21_33.setText("Cancelar la reunión"); o21_33.setCorrect(false);
+            q21_3.setOptions(List.of(o21_31, o21_32, o21_33));
 
-        EnrollmentId enrollmentId5 = new EnrollmentId(employeeUser2.getId(), cursoOnboarding.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser2.getId(), cursoOnboarding.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId5, employeeUser2, cursoOnboarding, ahora, null, "ASIGNADO", false, s1)));
+            ExamQuestion q21_4 = new ExamQuestion();
+            q21_4.setType(QuestionType.MULTIPLE_CHOICE);
+            q21_4.setText("¿Cuándo una reunión debió ser asincrónica (email/chat)?");
+            ExamOption o21_41 = new ExamOption(); o21_41.setText("Cuando no se requieren decisiones ni discusión"); o21_41.setCorrect(true);
+            ExamOption o21_42 = new ExamOption(); o21_42.setText("Cuando es sólo un status unidireccional"); o21_42.setCorrect(true);
+            ExamOption o21_43 = new ExamOption(); o21_43.setText("Cuando se necesita lluvia de ideas en vivo"); o21_43.setCorrect(false);
+            q21_4.setOptions(List.of(o21_41, o21_42, o21_43));
 
-        EnrollmentId enrollmentId6 = new EnrollmentId(employeeUser2.getId(), cursoRRHH.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser2.getId(), cursoRRHH.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId6, employeeUser2, cursoRRHH, ahora, null, "ASIGNADO", false, s5)));
+            ExamQuestion q21_5 = new ExamQuestion();
+            q21_5.setType(QuestionType.MULTIPLE_CHOICE);
+            q21_5.setText("¿Cuál es el rol del facilitador?");
+            ExamOption o21_51 = new ExamOption(); o21_51.setText("Cuidar los tiempos"); o21_51.setCorrect(true);
+            ExamOption o21_52 = new ExamOption(); o21_52.setText("Fomentar la participación"); o21_52.setCorrect(true);
+            ExamOption o21_53 = new ExamOption(); o21_53.setText("Resumir decisiones y próximos pasos"); o21_53.setCorrect(true);
+            ExamOption o21_54 = new ExamOption(); o21_54.setText("Hablar la mayor parte del tiempo"); o21_54.setCorrect(false);
+            q21_5.setOptions(List.of(o21_51, o21_52, o21_53, o21_54));
 
-        EnrollmentId enrollmentId7 = new EnrollmentId(employeeUser3.getId(), cursoOnboarding.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser3.getId(), cursoOnboarding.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId7, employeeUser3, cursoOnboarding, ahora, null, "ASIGNADO", false, s1)));
+            ExamQuestion q21_6 = new ExamQuestion();
+            q21_6.setType(QuestionType.MULTIPLE_CHOICE);
+            q21_6.setText("¿Qué debe incluir el cierre de la reunión?");
+            ExamOption o21_61 = new ExamOption(); o21_61.setText("Resumen de decisiones"); o21_61.setCorrect(true);
+            ExamOption o21_62 = new ExamOption(); o21_62.setText("Lista de action items con responsables y fechas"); o21_62.setCorrect(true);
+            ExamOption o21_63 = new ExamOption(); o21_63.setText("Opiniones irrelevantes"); o21_63.setCorrect(false);
+            q21_6.setOptions(List.of(o21_61, o21_62, o21_63));
 
-        EnrollmentId enrollmentId8 = new EnrollmentId(employeeUser3.getId(), cursoComunicacion.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser3.getId(), cursoComunicacion.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId8, employeeUser3, cursoComunicacion, ahora, null, "ASIGNADO", false, s7)));
+            ExamQuestion q21_7 = new ExamQuestion();
+            q21_7.setType(QuestionType.MULTIPLE_CHOICE);
+            q21_7.setText("Buenas prácticas de puntualidad");
+            ExamOption o21_71 = new ExamOption(); o21_71.setText("Empezar y terminar a horario"); o21_71.setCorrect(true);
+            ExamOption o21_72 = new ExamOption(); o21_72.setText("Dejar 5 minutos de buffer entre reuniones"); o21_72.setCorrect(true);
+            ExamOption o21_73 = new ExamOption(); o21_73.setText("Esperar 15 minutos a los que llegan tarde"); o21_73.setCorrect(false);
+            q21_7.setOptions(List.of(o21_71, o21_72, o21_73));
 
-        EnrollmentId enrollmentId9 = new EnrollmentId(employeeUser.getId(), cursoCultura.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser.getId(), cursoCultura.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId9, employeeUser, cursoCultura, ahora, null, "ASIGNADO", false, s9)));
-
-        EnrollmentId enrollmentId10 = new EnrollmentId(employeeUser2.getId(), cursoSalud.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser2.getId(), cursoSalud.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId10, employeeUser2, cursoSalud, ahora, null, "ASIGNADO", false, s11)));
-
-        EnrollmentId enrollmentId11 = new EnrollmentId(employeeUser3.getId(), cursoCultura.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser3.getId(), cursoCultura.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId11, employeeUser3, cursoCultura, ahora, null, "ASIGNADO", false, s9)));
-
-        EnrollmentId enrollmentId12 = new EnrollmentId(employeeUser4.getId(), cursoOnboarding.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser4.getId(), cursoOnboarding.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId12, employeeUser4, cursoOnboarding, ahora, null, "ASIGNADO", false, s1)));
-
-        EnrollmentId enrollmentId13 = new EnrollmentId(employeeUser4.getId(), cursoSalud.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser4.getId(), cursoSalud.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId13, employeeUser4, cursoSalud, ahora, null, "ASIGNADO", false, s11)));
-
-        EnrollmentId enrollmentId14 = new EnrollmentId(employeeUser5.getId(), cursoCultura.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser5.getId(), cursoCultura.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId14, employeeUser5, cursoCultura, ahora, null, "ASIGNADO", false, s9)));
-
-        EnrollmentId enrollmentId15 = new EnrollmentId(employeeUser5.getId(), cursoSeguridad.getId());
-        enrollmentRepository.findByUserIdAndCourseId(employeeUser5.getId(), cursoSeguridad.getId())
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(enrollmentId15, employeeUser5, cursoSeguridad, ahora, null, "ASIGNADO", false, s3)));
+            c21.setQuestions(List.of(q21_1, q21_2, q21_3, q21_4, q21_5, q21_6, q21_7));
+            c21.setSection(s21);
+            s21.setContent(c21);
+            sectionContentRepository.save(c21);
+        }
 
         // ===================== SEED MÉTRICAS =====================
         {
-            final long DAY = 1000L * 60 * 60 * 24;
 
             // ------- Buddy Alex -------
-            User buddyAlex = userRepository.findByEmail("buddy.alex@empresa.com").orElseGet(() ->
+            User buddyAlex = userRepository.findByEmail("gciruzzi@frba.utn.edu.ar").orElseGet(() ->
                     userRepository.save(
                             new User(
-                                    null, "Alex", "Gómez", "buddy.alex@empresa.com", "buddy123",
-                                    "IT", ahora, 1, "Av. Siempreviva 742", "1150000000", ahora,
+                                    null, "Genaro", "Ciruzzi", "gciruzzi@frba.utn.edu.ar", passwordService.hashPassword("buddy123"),
+                                    "IT", ahora, 1, "Av. Siempreviva 742", "1158864784", ahora,
                                     buddy, null, null, null
                             )
                     )
@@ -554,7 +719,7 @@ public class DataInitializer {
                 User u = userRepository.findByEmail(email).orElseGet(() ->
                         userRepository.save(
                                 new User(
-                                        null, nombre, apellido, email, "empleado123",
+                                        null, nombre, apellido, email, passwordService.hashPassword("empleado123"),
                                         "IT", ahora, 1, "Sin dirección", "1100000000", ahora,
                                         empleado, null, null, buddyAlex
                                 )
@@ -566,187 +731,445 @@ public class DataInitializer {
                 }
                 empleadosAlex.add(u);
             }
-
-            User mario   = empleadosAlex.get(0);
-            User camila  = empleadosAlex.get(1);
-            User sofia   = empleadosAlex.get(2);
-            User juan    = empleadosAlex.get(3);
-            User luis    = empleadosAlex.get(4);
-            User mariana = empleadosAlex.get(5);
-
-            // ------- ENROLLMENTS -------
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mario.getId(), cursoOnboarding.getId()), mario, cursoOnboarding,
-                                new Date(ahora.getTime() - 30 * DAY), new Date(ahora.getTime() - (30 - 12) * DAY), "FINALIZADO", false, s2)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(camila.getId(), cursoOnboarding.getId()), camila, cursoOnboarding,
-                                new Date(ahora.getTime() - 20 * DAY), new Date(ahora.getTime() - (20 - 6) * DAY), "FINALIZADO", false, s2)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(sofia.getId(), cursoOnboarding.getId()), sofia, cursoOnboarding,
-                                new Date(ahora.getTime() - 35 * DAY), new Date(ahora.getTime() - (35 - 18) * DAY), "FINALIZADO", false, s2)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(juan.getId(), cursoOnboarding.getId()), juan, cursoOnboarding,
-                                new Date(ahora.getTime() - 22 * DAY), new Date(ahora.getTime() - (22 - 9) * DAY), "FINALIZADO", false, s2)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(luis.getId(), cursoOnboarding.getId()), luis, cursoOnboarding,
-                                new Date(ahora.getTime() - 28 * DAY), new Date(ahora.getTime() - (28 - 14) * DAY), "FINALIZADO", false, s2)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoOnboarding.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mariana.getId(), cursoOnboarding.getId()), mariana, cursoOnboarding,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s1)));
-                enrollmentRepository.save(e);
-            }
-
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mario.getId(), cursoSeguridad.getId()), mario, cursoSeguridad,
-                                new Date(ahora.getTime() - 40 * DAY), new Date(ahora.getTime() - (40 - 20) * DAY), "FINALIZADO", false, s4)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(camila.getId(), cursoSeguridad.getId()), camila, cursoSeguridad,
-                                new Date(ahora.getTime() - 19 * DAY), new Date(ahora.getTime() - (19 - 7) * DAY), "FINALIZADO", false, s4)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(sofia.getId(), cursoSeguridad.getId()), sofia, cursoSeguridad,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s3)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(juan.getId(), cursoSeguridad.getId()), juan, cursoSeguridad,
-                                new Date(ahora.getTime() - 32 * DAY), new Date(ahora.getTime() - (32 - 14) * DAY), "FINALIZADO", false, s4)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(luis.getId(), cursoSeguridad.getId()), luis, cursoSeguridad,
-                                new Date(ahora.getTime() - 25 * DAY), new Date(ahora.getTime() - (25 - 11) * DAY), "FINALIZADO", false, s4)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoSeguridad.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mariana.getId(), cursoSeguridad.getId()), mariana, cursoSeguridad,
-                                new Date(ahora.getTime() - 18 * DAY), new Date(ahora.getTime() - (18 - 8) * DAY), "FINALIZADO", false, s4)));
-                enrollmentRepository.save(e);
-            }
-
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mario.getId(), cursoComunicacion.getId()), mario, cursoComunicacion,
-                                new Date(ahora.getTime() - 12 * DAY), new Date(ahora.getTime() - (12 - 5) * DAY), "FINALIZADO", false, s8)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(camila.getId(), cursoComunicacion.getId()), camila, cursoComunicacion,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s7)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(sofia.getId(), cursoComunicacion.getId()), sofia, cursoComunicacion,
-                                new Date(ahora.getTime() - 24 * DAY), new Date(ahora.getTime() - (24 - 11) * DAY), "FINALIZADO", false, s8)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(juan.getId(), cursoComunicacion.getId()), juan, cursoComunicacion,
-                                new Date(ahora.getTime() - 33 * DAY), new Date(ahora.getTime() - (33 - 16) * DAY), "FINALIZADO", false, s8)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(luis.getId(), cursoComunicacion.getId()), luis, cursoComunicacion,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s7)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoComunicacion.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mariana.getId(), cursoComunicacion.getId()), mariana, cursoComunicacion,
-                                new Date(ahora.getTime() - 21 * DAY), new Date(ahora.getTime() - (21 - 9) * DAY), "FINALIZADO", false, s8)));
-                enrollmentRepository.save(e);
-            }
-
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(camila.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(camila.getId(), cursoCultura.getId()), camila, cursoCultura,
-                                new Date(ahora.getTime() - 15 * DAY), new Date(ahora.getTime() - (15 - 6) * DAY), "FINALIZADO", false, s10)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(luis.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(luis.getId(), cursoCultura.getId()), luis, cursoCultura,
-                                new Date(ahora.getTime() - 23 * DAY), new Date(ahora.getTime() - (23 - 10) * DAY), "FINALIZADO", false, s10)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mario.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mario.getId(), cursoCultura.getId()), mario, cursoCultura,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s9)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(mariana.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(mariana.getId(), cursoCultura.getId()), mariana, cursoCultura,
-                                new Date(ahora.getTime() - 26 * DAY), new Date(ahora.getTime() - (26 - 13) * DAY), "FINALIZADO", false, s10)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(sofia.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(sofia.getId(), cursoCultura.getId()), sofia, cursoCultura,
-                                new Date(ahora.getTime() - 22 * DAY), new Date(ahora.getTime() - (22 - 9) * DAY), "FINALIZADO", false, s10)));
-                enrollmentRepository.save(e);
-            }
-            {
-                Enrollment e = enrollmentRepository.findByUserIdAndCourseId(juan.getId(), cursoCultura.getId())
-                        .orElseGet(() -> enrollmentRepository.save(new Enrollment(
-                                new EnrollmentId(juan.getId(), cursoCultura.getId()), juan, cursoCultura,
-                                new Date(ahora.getTime() - 14 * DAY), null, "ASIGNADO", false, s9)));
-                enrollmentRepository.save(e);
-            }
         }
         // ===================== FIN SEED MÉTRICAS =====================
+
+        // ============== NUEVO CURSO CON ENCUESTA==============
+
+        Course cursoSistemas = courseRepository.findByTitle("Introducción a Sistemas")
+                .orElseGet(() -> courseRepository.save(
+                        new Course(null, "Introducción a Sistemas", "Aprende lo básico sobre nuestros sistemas.", "SOPORTE", ahora, dentroDeUnMes, rrhhUser, null, null)));
+
+        Section sDocxs = new Section(
+                null,
+                "Lumina Docxs",
+                "1",
+                cursoSistemas,
+                null,
+                null
+        );
+        sDocxs = sectionRepository.save(sDocxs);
+
+        if (sDocxs.getContent() == null) {
+            DocumentContent cDocxs = new DocumentContent();
+            cDocxs.setUrl("https://docs.google.com/document/d/1DYf0ZTqEcwA6MMHUqYL9St9VtS7xvSqu/edit");
+            cDocxs.setSection(sDocxs);
+            sDocxs.setContent(cDocxs);
+            sectionContentRepository.save(cDocxs);
+        }
+
+        cursoSistemas.setSections(List.of(sDocxs));
+        courseRepository.save(cursoSistemas);
+
+        List<User> empleados = userRepository.findAll().stream()
+                .filter(u -> u.getRole() != null && "Empleado".equalsIgnoreCase(u.getRole().getName())).toList();
+
+        List<Course> todosLosCursos = List.of(
+                cursoInicial, cursoOnboarding, cursoSeguridad, cursoRRHH,
+                cursoComunicacion, cursoCultura, cursoSalud, cursoSistemas,
+                cursoJava
+        );
+
+            for (Course c : todosLosCursos) {
+                List<Section> secs = c.getSections() == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(c.getSections());
+
+                // --- Exam ---
+                ExamContent ex = null;
+                Section secExamExistente = (secs == null) ? null :
+                        secs.stream().filter(sec -> sec.getContent() instanceof ExamContent).findFirst().orElse(null);
+                if (secExamExistente != null) {
+                    ex = (ExamContent) secExamExistente.getContent();
+                } else {
+                    Section sEx = new Section(null, "Examen de " + c.getTitle(), nextOrder(secs), c, null, null);
+                    sEx = sectionRepository.save(sEx);
+                    ex = buildDefaultExamForCourse(c, sEx);
+                    ex = sectionContentRepository.saveAndFlush(ex);
+                    secs.add(sEx);
+                }
+
+                // --- Survey ---
+                SurveyContent sv = null;
+                Section secSurveyExistente = (secs == null) ? null :
+                        secs.stream().filter(sec -> sec.getContent() instanceof SurveyContent).findFirst().orElse(null);
+                if (secSurveyExistente != null) {
+                    sv = (SurveyContent) secSurveyExistente.getContent();
+                } else {
+                    Section sSv = new Section(null, "Encuesta de " + c.getTitle(), nextOrder(secs), c, null, null);
+                    sSv = sectionRepository.save(sSv);
+                    sv = buildDefaultSurveyForCourse(c, sSv);
+                    sv = sectionContentRepository.saveAndFlush(sv);
+                    secs.add(sSv);
+                }
+
+                if (!secs.equals(c.getSections())) {
+                    c.setSections(secs);
+                    courseRepository.save(c);
+                }
+
+                // ahora siempre hay ex y sv -> sembramos resultados
+                for (User emp : empleados) {
+                    boolean passBias = java.util.concurrent.ThreadLocalRandom.current().nextDouble() < 0.60;
+                    if (cursoJava == null || !c.getId().equals(cursoJava.getId())) {
+                        seedExamResultIfAbsent(ex, emp, passBias);
+                        seedSurveyResultIfAbsent(sv, emp);
+                    }
+                }
+            }
+        // ---------- ASIGNAR TODOS LOS CURSOS A TODOS LOS EMPLEADOS ----------
+        for (Course c : todosLosCursos) {
+
+            if (cursoJava != null && c.getId().equals(cursoJava.getId())) {
+                continue;
+            }
+
+            boolean yaAsignado = enrollmentRepository
+                    .findByUserIdAndCourseId(rrhhUser.getId(), c.getId())
+                    .isPresent();
+
+            if (!yaAsignado) {
+                Section startSec = null;
+                List<Section> secs = c.getSections();
+                if (secs != null && !secs.isEmpty()) {
+                    startSec = secs.stream()
+                            .sorted((a, b) -> {
+                                int oa = 0, ob = 0;
+                                try {
+                                    oa = Integer.parseInt(a.getOrder());
+                                } catch (Exception ignore) {
+                                }
+                                try {
+                                    ob = Integer.parseInt(b.getOrder());
+                                } catch (Exception ignore) {
+                                }
+                                return Integer.compare(oa, ob);
+                            })
+                            .findFirst().orElse(null);
+                }
+
+                EnrollmentId eid = new EnrollmentId(rrhhUser.getId(), c.getId());
+                Enrollment en = new Enrollment(
+                        eid,
+                        rrhhUser,
+                        c,
+                        ahora,
+                        null,
+                        "ASIGNADO",
+                        false,
+                        startSec
+                );
+                enrollmentRepository.save(en);
+            }
+        }
+        for (User emp : empleados) {
+            for (Course c : todosLosCursos) {
+
+                if (cursoJava != null && c.getId().equals(cursoJava.getId())) {
+                    continue;
+                }
+
+                boolean yaAsignado = enrollmentRepository
+                        .findByUserIdAndCourseId(emp.getId(), c.getId())
+                        .isPresent();
+
+                if (!yaAsignado) {
+                    Section startSec = null;
+                    List<Section> secs = c.getSections();
+                    if (secs != null && !secs.isEmpty()) {
+                        startSec = secs.stream()
+                                .sorted((a, b) -> {
+                                    int oa = 0, ob = 0;
+                                    try { oa = Integer.parseInt(a.getOrder()); } catch (Exception ignore) {}
+                                    try { ob = Integer.parseInt(b.getOrder()); } catch (Exception ignore) {}
+                                    return Integer.compare(oa, ob);
+                                })
+                                .findFirst().orElse(null);
+                    }
+
+                    EnrollmentId eid = new EnrollmentId(emp.getId(), c.getId());
+                    Enrollment en = new Enrollment(
+                            eid,
+                            emp,
+                            c,
+                            ahora,
+                            null,
+                            "ASIGNADO",
+                            false,
+                            startSec
+                    );
+                    enrollmentRepository.save(en);
+                }
+            }
+        }
+
+        // ---------- RANDOMIZAR PROGRESO DE ENROLLMENTS ----------
+        for (User emp : empleados) {
+            for (Course c : todosLosCursos) {
+                enrollmentRepository.findByUserIdAndCourseId(emp.getId(), c.getId()).ifPresent(en -> {
+                    List<Section> secs = c.getSections();
+                    if (secs == null || secs.isEmpty()) return;
+
+                    // Ordenamos por "order" para poder elegir una sección coherente
+                    List<Section> ordenadas = new java.util.ArrayList<>(secs);
+                    ordenadas.sort((a, b) -> {
+                        int oa = 0, ob = 0;
+                        try { oa = Integer.parseInt(a.getOrder()); } catch (Exception ignore) {}
+                        try { ob = Integer.parseInt(b.getOrder()); } catch (Exception ignore) {}
+                        return Integer.compare(oa, ob);
+                    });
+
+                    int n = ordenadas.size();
+                    double p = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+
+                    Section last = ordenadas.get(n - 1);
+
+                    // Distribución: ~20% asignado, ~55% en curso, ~25% finalizado
+                    if ("FINALIZADO".equalsIgnoreCase(en.getStatus()) && en.getFinishedDate() != null) {
+                        // Asegurar que FINALIZADO apunte SIEMPRE a la última sección actual
+                        if (en.getSection() == null || !en.getSection().getId().equals(last.getId())) {
+                            en.setSection(last);
+                        }
+
+                        // Ya finalizado previamente: 90% lo mantenemos, 10% lo bajamos a "en curso" para variar
+                        if (p < 0.10 && n > 1) {
+                            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(n - 1);
+                            en.setStatus("ASIGNADO");
+                            en.setFinishedDate(null);
+                            en.setSection(ordenadas.get(idx));
+                            long daysBack = java.util.concurrent.ThreadLocalRandom.current().nextLong(5, 31);
+                            en.setEnrolledAt(new Date(System.currentTimeMillis() - daysBack * 24L * 60L * 60L * 1000L));
+                        }
+                    } else {
+                        if (p < 0.22) {
+                            // EN CURSO, sin avance
+                            en.setStatus("ASIGNADO");
+                            en.setFinishedDate(null);
+                            en.setSection(ordenadas.get(0));
+                            long daysBack = java.util.concurrent.ThreadLocalRandom.current().nextLong(0, 8);
+                            en.setEnrolledAt(new Date(System.currentTimeMillis() - daysBack * 24L * 60L * 60L * 1000L));
+                        } else if (p < 0.78 && n > 1) {
+                            // EN CURSO, con avance
+                            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, n);
+                            if (idx == n - 1 && n > 2) idx = n - 2;
+                            en.setStatus("ASIGNADO");
+                            en.setFinishedDate(null);
+                            en.setSection(ordenadas.get(idx));
+                            long daysBack = java.util.concurrent.ThreadLocalRandom.current().nextLong(3, 21);
+                            en.setEnrolledAt(new Date(System.currentTimeMillis() - daysBack * 24L * 60L * 60L * 1000L));
+                        } else {
+                            // FINALIZADO
+                            en.setStatus("FINALIZADO");
+                            en.setSection(ordenadas.get(n - 1));
+                            long assignedBack = java.util.concurrent.ThreadLocalRandom.current().nextLong(15, 46);
+                            long duration = java.util.concurrent.ThreadLocalRandom.current().nextLong(5, Math.max(6, assignedBack));
+                            Date assignedAt = new Date(System.currentTimeMillis() - assignedBack * 24L * 60L * 60L * 1000L);
+                            Date completedAt = new Date(assignedAt.getTime() + duration * 24L * 60L * 60L * 1000L);
+                            en.setEnrolledAt(assignedAt);
+                            en.setFinishedDate(completedAt);
+                        }
+                    }
+
+                    enrollmentRepository.save(en);
+                });
+            }
+        }
+
+    }
+
+    private void seedExamResultIfAbsent(ExamContent exam, User user, boolean pass) {
+        // ¿Ya existe?
+        if (examResultRepository.findByUserAndExam(user.getId(), exam.getId_content()).isPresent()) {
+            return;
+        }
+
+        List<ExamQuestionResultDTO> results = new java.util.ArrayList<>();
+        int score = 0;
+
+        for (ExamQuestion q : exam.getQuestions()) {
+            List<Long> correctIds = q.getOptions().stream()
+                    .filter(o -> Boolean.TRUE.equals(o.getCorrect()))
+                    .map(ExamOption::getId)
+                    .toList();
+
+            List<Long> selectedIds;
+            List<Long> incorrect = q.getOptions().stream()
+                    .filter(o -> !Boolean.TRUE.equals(o.getCorrect()))
+                    .map(ExamOption::getId)
+                    .toList();
+
+            double pCorrect = pass ? 0.75 : 0.25;
+            boolean pickCorrect = java.util.concurrent.ThreadLocalRandom.current().nextDouble() < pCorrect;
+
+            if (pickCorrect) {
+                selectedIds = correctIds;
+            } else {
+                if (incorrect.isEmpty()) {
+                    selectedIds = correctIds.isEmpty() ? java.util.List.of() : java.util.List.of(correctIds.get(0));
+                } else {
+                    java.util.List<Long> pool = new java.util.ArrayList<>(incorrect);
+                    java.util.Collections.shuffle(pool);
+                    int k = pool.size() >= 2 && java.util.concurrent.ThreadLocalRandom.current().nextBoolean() ? 2 : 1;
+                    selectedIds = pool.subList(0, Math.min(k, pool.size()));
+                }
+            }
+
+            boolean correct = new java.util.HashSet<>(selectedIds).equals(new java.util.HashSet<>(correctIds));
+            if (correct) score++;
+
+            ExamQuestionResultDTO qr = new ExamQuestionResultDTO();
+            qr.setQuestionId(q.getId());
+            qr.setSelectedOptionIds(selectedIds);
+            qr.setCorrectOptionIds(correctIds);
+            qr.setCorrect(correct);
+            results.add(qr);
+        }
+
+        ExamResult r = new ExamResult();
+        r.setExam(exam);
+        r.setUser(user);
+        r.setScore(score);
+        r.setTotalQuestions(exam.getQuestions().size());
+        r.setCompletedAt(new java.util.Date());
+
+        try {
+            r.setDetail(objectMapper.writeValueAsString(results));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("No se pudo serializar detail de ExamResult", e);
+        }
+
+        examResultRepository.save(r);
+    }
+
+    private void seedSurveyResultIfAbsent(SurveyContent survey, User user) {
+        if (surveyResultRepository.findByUserAndSurvey(user.getId(), survey.getId_content()).isPresent()) {
+            return;
+        }
+
+        List<SurveyQuestionResultDTO> results = new java.util.ArrayList<>();
+
+        for (SurveyQuestion q : survey.getQuestions()) {
+            List<Long> optionIds = q.getOptions().stream()
+                    .map(o -> o.getId())
+                    .toList();
+
+            // Elegimos aleatoriamente una opción si hay al menos una
+            List<Long> selectedIds;
+            if (optionIds.isEmpty()) {
+                selectedIds = java.util.Collections.emptyList();
+            } else {
+                int idx = ThreadLocalRandom.current().nextInt(optionIds.size());
+                selectedIds = java.util.List.of(optionIds.get(idx));
+            }
+
+            SurveyQuestionResultDTO qr = new SurveyQuestionResultDTO();
+            qr.setQuestionId(q.getId());
+            qr.setSelectedOptionIds(selectedIds);
+            results.add(qr);
+        }
+
+        SurveyResult r = new SurveyResult();
+        r.setSurvey(survey);
+        r.setUser(user);
+        r.setTotalQuestions(survey.getQuestions().size());
+        r.setCompletedAt(new java.util.Date());
+
+        try {
+            r.setDetail(objectMapper.writeValueAsString(results));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("No se pudo serializar el detail de SurveyResult", e);
+        }
+
+        surveyResultRepository.save(r);
+    }
+
+    private String nextOrder(List<Section> secs) {
+        int next = (secs == null || secs.isEmpty()) ? 1
+                : secs.stream()
+                .map(s -> { try { return Integer.parseInt(s.getOrder()); } catch (Exception e) { return 0; } })
+                .max(Integer::compareTo)
+                .orElse(0) + 1;
+        return Integer.toString(next);
+    }
+
+    private ExamContent buildDefaultExamForCourse(Course c, Section s) {
+        ExamContent ex = new ExamContent();
+        ex.setTimeLimit(10);
+
+        // Q1
+        ExamQuestion q1 = new ExamQuestion();
+        q1.setType(QuestionType.SINGLE_CHOICE);
+        q1.setText("Concepto clave del curso \"" + c.getTitle() + "\"");
+        ExamOption q1o1 = new ExamOption(); q1o1.setText("La idea principal abordada en el curso"); q1o1.setCorrect(true);
+        ExamOption q1o2 = new ExamOption(); q1o2.setText("Un tema no relacionado"); q1o2.setCorrect(false);
+        ExamOption q1o3 = new ExamOption(); q1o3.setText("Una práctica obsoleta"); q1o3.setCorrect(false);
+        q1.setOptions(List.of(q1o1, q1o2, q1o3));
+
+        // Q2
+        ExamQuestion q2 = new ExamQuestion();
+        q2.setType(QuestionType.MULTIPLE_CHOICE);
+        q2.setText("Buenas prácticas vinculadas al curso");
+        ExamOption q2o1 = new ExamOption(); q2o1.setText("Aplicar lo aprendido en el trabajo diario"); q2o1.setCorrect(true);
+        ExamOption q2o2 = new ExamOption(); q2o2.setText("Documentar y compartir con el equipo"); q2o2.setCorrect(true);
+        ExamOption q2o3 = new ExamOption(); q2o3.setText("Ignorar las políticas definidas"); q2o3.setCorrect(false);
+        q2.setOptions(List.of(q2o1, q2o2, q2o3));
+
+        // Q3
+        ExamQuestion q3 = new ExamQuestion();
+        q3.setType(QuestionType.SINGLE_CHOICE);
+        q3.setText("¿Qué hacer ante dudas sobre el contenido?");
+        ExamOption q3o1 = new ExamOption(); q3o1.setText("Consultar material y preguntar al responsable"); q3o1.setCorrect(true);
+        ExamOption q3o2 = new ExamOption(); q3o2.setText("No hacer nada"); q3o2.setCorrect(false);
+        ExamOption q3o3 = new ExamOption(); q3o3.setText("Difundir la duda sin chequear"); q3o3.setCorrect(false);
+        q3.setOptions(List.of(q3o1, q3o2, q3o3));
+
+        ex.setQuestions(List.of(q1, q2, q3));
+        ex.setSection(s);
+        s.setContent(ex);
+        return ex;
+    }
+
+    private SurveyContent buildDefaultSurveyForCourse(Course c, Section s) {
+        SurveyContent survey = new SurveyContent();
+
+        // P1
+        SurveyQuestion q1 = new SurveyQuestion();
+        q1.setText("¿Qué tan satisfecho estás con el curso en general?");
+        SurveyOption q1o1 = new SurveyOption(); q1o1.setText("Muy satisfecho");
+        SurveyOption q1o2 = new SurveyOption(); q1o2.setText("Bastante satisfecho");
+        SurveyOption q1o3 = new SurveyOption(); q1o3.setText("Algo satisfecho");
+        SurveyOption q1o4 = new SurveyOption(); q1o4.setText("Poco satisfecho");
+        SurveyOption q1o5 = new SurveyOption(); q1o5.setText("Nada satisfecho");
+        q1.setOptions(List.of(q1o1, q1o2, q1o3, q1o4, q1o5));
+
+        // P2
+        SurveyQuestion q2 = new SurveyQuestion();
+        q2.setText("¿El contenido fue claro, útil y bien estructurado?");
+        SurveyOption q2o1 = new SurveyOption(); q2o1.setText("Si");
+        SurveyOption q2o2 = new SurveyOption(); q2o2.setText("No");
+        q2.setOptions(List.of(q2o1, q2o2));
+
+        // P3
+        SurveyQuestion q3 = new SurveyQuestion();
+        q3.setText("¿Qué tan efectivo fue el instructor al enseñar el material?");
+        SurveyOption q3o1 = new SurveyOption(); q3o1.setText("Muy efectivo");
+        SurveyOption q3o2 = new SurveyOption(); q3o2.setText("Bastante efectivo");
+        SurveyOption q3o3 = new SurveyOption(); q3o3.setText("Algo efectivo");
+        SurveyOption q3o4 = new SurveyOption(); q3o4.setText("Poco efectivo");
+        SurveyOption q3o5 = new SurveyOption(); q3o5.setText("Nada efectivo");
+        q3.setOptions(List.of(q3o1, q3o2, q3o3, q3o4, q3o5));
+
+        // P4
+        SurveyQuestion q4 = new SurveyQuestion();
+        q4.setText("¿Qué tan satisfecho estas con tu Buddy asignado hasta el momento?");
+        SurveyOption q4o1 = new SurveyOption(); q4o1.setText("Muy satisfecho");
+        SurveyOption q4o2 = new SurveyOption(); q4o2.setText("Bastante satisfecho");
+        SurveyOption q4o3 = new SurveyOption(); q4o3.setText("Algo satisfecho");
+        SurveyOption q4o4 = new SurveyOption(); q4o4.setText("Poco satisfecho");
+        SurveyOption q4o5 = new SurveyOption(); q4o5.setText("Nada satisfecho");
+        q4.setOptions(List.of(q4o1, q4o2, q4o3, q4o4, q4o5));
+
+        survey.setQuestions(List.of(q1, q2, q3, q4));
+        survey.setSection(s);
+        s.setContent(survey);
+        return survey;
     }
 }

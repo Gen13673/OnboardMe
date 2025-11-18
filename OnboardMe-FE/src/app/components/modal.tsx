@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Dialog, DialogContent, DialogTitle } from "@/app/components/ui/dialog"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/app/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 const rrhhSteps = [
   {
@@ -75,36 +75,36 @@ const rrhhSteps = [
     bgColor: "bg-indigo-50",
     hasLink: false,
   },
-]
+];
 
 export function RRHHModal() {
-  const [open, setOpen] = useState(false)
-  const [step, setStep] = useState(-1)
-  const router = useRouter()
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(-1);
+  const router = useRouter();
 
   useEffect(() => {
-    const alreadySeen = localStorage.getItem("hasSeenRRHH")
+    const alreadySeen = localStorage.getItem("hasSeenRRHH");
     if (!alreadySeen) {
-      setOpen(true)
+      setOpen(true);
     }
-  }, [])
+  }, []);
 
   const handleClose = () => {
-    setOpen(false)
-    localStorage.setItem("hasSeenRRHH", "true")
-  }
+    setOpen(false);
+    localStorage.setItem("hasSeenRRHH", "true");
+  };
 
   const handleNext = () => {
     if (step === rrhhSteps.length - 1) {
-      handleClose()
+      handleClose();
     } else {
-      setStep((prev) => prev + 1)
+      setStep((prev) => prev + 1);
     }
-  }
+  };
 
-  const handleStart = () => setStep(0)
+  const handleStart = () => setStep(0);
 
-  const currentStep = rrhhSteps[step]
+  const currentStep = rrhhSteps[step];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -122,23 +122,29 @@ export function RRHHModal() {
                     <span className="text-xl">🎉</span>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Bienvenida</div>
-                    <DialogTitle className="text-2xl font-bold text-gray-900">¡Bienvenido a OnboardMe!</DialogTitle>
+                    <div className="text-sm font-medium text-gray-500">
+                      Bienvenida
+                    </div>
+                    <DialogTitle className="text-2xl font-bold text-gray-900">
+                      ¡Bienvenido a OnboardMe!
+                    </DialogTitle>
                   </div>
                 </div>
               </div>
 
               <div className="mb-8">
                 <p className="text-gray-600 text-lg leading-relaxed">
-                  Antes de comenzar, te recomendamos completar la información clave de Recursos Humanos para tener una
-                  mejor experiencia.
+                  Antes de comenzar, te recomendamos completar la información
+                  clave de Recursos Humanos para tener una mejor experiencia.
                 </p>
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-gray-500">
                   <span className="text-sm">🏢</span>
-                  <span className="text-sm font-medium">{rrhhSteps.length - 1} recursos disponibles</span>
+                  <span className="text-sm font-medium">
+                    {rrhhSteps.length - 1} recursos disponibles
+                  </span>
                 </div>
 
                 <div className="flex items-center space-x-3">
@@ -154,7 +160,9 @@ export function RRHHModal() {
                   >
                     <span className="flex items-center">
                       Comenzar ahora
-                      <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                      <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">
+                        →
+                      </span>
                     </span>
                   </button>
                 </div>
@@ -163,7 +171,10 @@ export function RRHHModal() {
               {/* Progress dots preview */}
               <div className="flex justify-center mt-8 space-x-2">
                 {rrhhSteps.map((_, index) => (
-                  <div key={index} className="w-2 h-2 rounded-full bg-gray-300" />
+                  <div
+                    key={index}
+                    className="w-2 h-2 rounded-full bg-gray-300"
+                  />
                 ))}
               </div>
             </div>
@@ -179,7 +190,9 @@ export function RRHHModal() {
             </div>
 
             {/* Background decoration */}
-            <div className={`absolute inset-0 ${currentStep.bgColor} opacity-30`}></div>
+            <div
+              className={`absolute inset-0 ${currentStep.bgColor} opacity-30`}
+            ></div>
             <div className="absolute top-4 right-4 w-24 h-24 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-2xl"></div>
 
             <div className="relative p-8 pt-12">
@@ -193,15 +206,21 @@ export function RRHHModal() {
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-500">
-                      {step === rrhhSteps.length - 1 ? "¡Listo!" : `Paso ${step + 1} de ${rrhhSteps.length - 1}`}
+                      {step === rrhhSteps.length - 1
+                        ? "¡Listo!"
+                        : `Paso ${step + 1} de ${rrhhSteps.length - 1}`}
                     </div>
-                    <DialogTitle className="text-2xl font-bold text-gray-900">{currentStep.title}</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-gray-900">
+                      {currentStep.title}
+                    </DialogTitle>
                   </div>
                 </div>
               </div>
 
               <div className="mb-8">
-                <p className="text-gray-600 text-lg leading-relaxed">{currentStep.description}</p>
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  {currentStep.description}
+                </p>
               </div>
 
               <div className="flex items-center justify-between">
@@ -227,7 +246,9 @@ export function RRHHModal() {
                       className="group px-6 py-3 bg-white/40 backdrop-blur border border-gray-200 rounded-lg text-gray-700 font-medium hover:text-gray-800 hover:bg-white/60 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-300 h-12 flex items-center"
                     >
                       <span className="flex items-center">
-                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-300">←</span>
+                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-300">
+                          ←
+                        </span>
                         Volver al inicio
                       </span>
                     </button>
@@ -238,7 +259,9 @@ export function RRHHModal() {
                       className="group px-6 py-3 bg-white/40 backdrop-blur border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-white/60 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-300 h-12 flex items-center"
                     >
                       <span className="flex items-center">
-                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-300">←</span>
+                        <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-300">
+                          ←
+                        </span>
                         Anterior
                       </span>
                     </button>
@@ -256,7 +279,9 @@ export function RRHHModal() {
                       ) : (
                         <>
                           Siguiente
-                          <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                          <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">
+                            →
+                          </span>
                         </>
                       )}
                     </span>
@@ -284,5 +309,5 @@ export function RRHHModal() {
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

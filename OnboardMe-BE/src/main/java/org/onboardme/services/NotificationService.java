@@ -36,4 +36,10 @@ public class NotificationService {
 
         return notificationTransformer.buildNotificationResponse(notification);
     }
+
+    public void createNotification(NotificationDTO notification) {
+        Notification notificationEntity = notificationTransformer.buildNotificationEntityResponse(notification);
+
+        notificationRepository.save(notificationEntity);
+    }
 }

@@ -27,7 +27,8 @@ public class Notification {
     @Column(name= "Titulo")
     private String title;
 
-    @Column(name = "Mensaje")
+    @Lob
+    @Column(name = "Mensaje", columnDefinition = "TEXT")
     private String message;
 
     @Column(name = "Fecha_envio")

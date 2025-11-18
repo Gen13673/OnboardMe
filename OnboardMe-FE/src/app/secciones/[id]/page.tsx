@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams } from 'next/navigation';
-import { getSectionContent } from '@/app/services/section.service';
-import { SectionContent } from '@/app/models/SectionContent';
+import { useParams } from "next/navigation";
+import { getSectionContent } from "@/app/services/section.service";
+import { SectionContent } from "@/app/models/SectionContent";
 
 function DocxInlineViewer({ url }: { url: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,69 +71,83 @@ function DocxInlineViewer({ url }: { url: string }) {
 }
 
 const isLikelyLocal = (u?: string) => {
-  if (!u) return false
+  if (!u) return false;
   try {
-    const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-    const url = new URL(u, base)
-    const h = url.hostname
+    const base =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000";
+    const url = new URL(u, base);
+    const h = url.hostname;
 
     // Local explícito
-    if (['localhost', '127.0.0.1', '::1'].includes(h)) return true
+    if (["localhost", "127.0.0.1", "::1"].includes(h)) return true;
 
     // IP privada
     if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) {
-      const [a, b] = h.split('.').map(Number)
-      if (a === 10) return true
-      if (a === 192 && b === 168) return true
-      if (a === 172 && b >= 16 && b <= 31) return true
+      const [a, b] = h.split(".").map(Number);
+      if (a === 10) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
     }
 
     // Misma-origen (ej. tu Next en dev)
-    if (typeof window !== 'undefined' && url.origin === window.location.origin) return true
+    if (typeof window !== "undefined" && url.origin === window.location.origin)
+      return true;
 
-    return false
+    return false;
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 const isGoogleDriveLike = (u?: string) => {
-  if (!u) return false
+  if (!u) return false;
   try {
-    const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-    const url = new URL(u, base)
-    return /(?:^|\.)drive\.google\.com$|(?:^|\.)docs\.google\.com$/.test(url.hostname)
+    const base =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000";
+    const url = new URL(u, base);
+    return /(?:^|\.)drive\.google\.com$|(?:^|\.)docs\.google\.com$/.test(
+      url.hostname,
+    );
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 const toDrivePreview = (u: string) => {
-  const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-  const url = new URL(u, base)
-  const host = url.hostname
-  const path = url.pathname
-  const idQP = url.searchParams.get('id')
+  const base =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "http://localhost:3000";
+  const url = new URL(u, base);
+  const host = url.hostname;
+  const path = url.pathname;
+  const idQP = url.searchParams.get("id");
 
   // docs.google.com/document/d/<ID>/...
   if (/docs\.google\.com$/.test(host)) {
-    const m = path.match(/^\/document\/d\/([^/]+)/)
-    if (m) return `https://docs.google.com/document/d/${m[1]}/preview`
+    const m = path.match(/^\/document\/d\/([^/]+)/);
+    if (m) return `https://docs.google.com/document/d/${m[1]}/preview`;
   }
 
   // drive.google.com/file/d/<ID>/view...
   if (/drive\.google\.com$/.test(host)) {
-    const m = path.match(/^\/file\/d\/([^/]+)/)
-    if (m) return `https://drive.google.com/file/d/${m[1]}/preview`
+    const m = path.match(/^\/file\/d\/([^/]+)/);
+    if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
     // drive.google.com/open?id=<ID>
-    if (path === '/open' && idQP) return `https://drive.google.com/file/d/${idQP}/preview`
+    if (path === "/open" && idQP)
+      return `https://drive.google.com/file/d/${idQP}/preview`;
     // drive.google.com/uc?id=<ID>&export=download
-    if (path.startsWith('/uc') && idQP) return `https://drive.google.com/file/d/${idQP}/preview`
+    if (path.startsWith("/uc") && idQP)
+      return `https://drive.google.com/file/d/${idQP}/preview`;
   }
 
   // si no matchea, devolvémosla como vino
-  return u
-}
+  return u;
+};
 
 export default function SectionContentPage() {
   const { id } = useParams();
@@ -141,9 +155,7 @@ export default function SectionContentPage() {
 
   useEffect(() => {
     if (id) {
-      getSectionContent(Number(id))
-        .then(setContent)
-        .catch(console.error);
+      getSectionContent(Number(id)).then(setContent).catch(console.error);
     }
   }, [id]);
 
@@ -156,7 +168,7 @@ export default function SectionContentPage() {
 
   const renderContent = () => {
     switch (content.type) {
-      case 'VIDEO': {
+      case "VIDEO": {
         const url = content.url?.startsWith("http")
           ? content.url
           : `http://localhost:8080${content.url}`;
@@ -169,36 +181,39 @@ export default function SectionContentPage() {
         );
       }
 
-      case 'DOCUMENT': {
+      case "DOCUMENT": {
         // 1) Construir URL absoluta sin hardcodear puertos
-        let embedUrl = content.url || ''
-        if (!embedUrl.startsWith('http')) {
-          const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-          embedUrl = new URL(embedUrl, origin).href
+        let embedUrl = content.url || "";
+        if (!embedUrl.startsWith("http")) {
+          const origin =
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3000";
+          embedUrl = new URL(embedUrl, origin).href;
         }
 
         // Si es Drive/Docs, forzamos /preview y NO usamos sandbox
         if (isGoogleDriveLike(embedUrl)) {
-          const preview = toDrivePreview(embedUrl)
+          const preview = toDrivePreview(embedUrl);
           return (
             <iframe
               src={preview}
               className="w-full h-[600px]"
               allow="autoplay; fullscreen"
             />
-          )
+          );
         }
 
         // 2) Detectar tipo con la URL ya absoluta
-        const isDocx  = embedUrl?.toLowerCase().endsWith('.docx') ?? false
-        const isPdf   = embedUrl?.toLowerCase().endsWith('.pdf') ?? false
-        const isDrive = embedUrl?.includes('drive.google.com') ?? false
+        const isDocx = embedUrl?.toLowerCase().endsWith(".docx") ?? false;
+        const isPdf = embedUrl?.toLowerCase().endsWith(".pdf") ?? false;
+        const isDrive = embedUrl?.includes("drive.google.com") ?? false;
 
         // 3) DOCX
         if (isDocx) {
           // 3.a) Google Drive -> /preview
           if (isDrive) {
-            const gdrivePreview = embedUrl.replace('/view', '/preview')
+            const gdrivePreview = embedUrl.replace("/view", "/preview");
             return (
               <iframe
                 src={gdrivePreview}
@@ -206,16 +221,16 @@ export default function SectionContentPage() {
                 allow="autoplay"
                 sandbox="allow-scripts allow-same-origin"
               />
-            )
+            );
           }
 
           // 3.b) Local / misma-origen / IP privada -> Mammoth (render en cliente)
           if (isLikelyLocal(embedUrl)) {
-            return <DocxInlineViewer url={embedUrl} />
+            return <DocxInlineViewer url={embedUrl} />;
           }
 
           // 3.c) Público -> Office Viewer
-          const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(embedUrl)}`
+          const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(embedUrl)}`;
           return (
             <iframe
               src={officeUrl}
@@ -223,7 +238,7 @@ export default function SectionContentPage() {
               allow="autoplay"
               sandbox="allow-scripts allow-same-origin"
             />
-          )
+          );
         }
 
         // 4) PDF directo
@@ -235,7 +250,7 @@ export default function SectionContentPage() {
               allow="autoplay"
               sandbox="allow-scripts allow-same-origin"
             />
-          )
+          );
         }
 
         // 5) Resto de tipos por iframe directo
@@ -246,10 +261,10 @@ export default function SectionContentPage() {
             allow="autoplay"
             sandbox="allow-scripts allow-same-origin"
           />
-        )
+        );
       }
 
-      case 'IMAGE': {
+      case "IMAGE": {
         const url = content.url?.startsWith("http")
           ? content.url
           : `http://localhost:8080${content.url}`;
@@ -258,7 +273,7 @@ export default function SectionContentPage() {
         );
       }
 
-      case 'EXAM':
+      case "EXAM":
         return (
           <p className="text-xl font-medium">Pregunta: {content.question}</p>
         );

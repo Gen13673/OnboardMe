@@ -5,6 +5,7 @@
 @import "primereact/resources/themes/lara-light-blue/theme.css";
 @import "primereact/resources/primereact.min.css";
 @import "primeicons/primeicons.css";
+@import "react-toastify/dist/ReactToastify.css";
 
 :root {
   --color-primary: #4d82bc;
@@ -149,4 +150,22 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+ /* Unica línea para toasts */
+.toast-one-line .Toastify__toast-body {
+    white-space: nowrap;
+}
+
+/* React-Toastify: hover del botón de cierre */
+.Toastify__close-button,
+.Toastify__close-button:hover,
+.Toastify__close-button:focus {
+    background: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+
+.Toastify__close-button:hover {
+    opacity: 1;
 }

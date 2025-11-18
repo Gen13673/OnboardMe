@@ -1,18 +1,39 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import HeaderTabs from "./components/headerTabs";
+import { AuthProvider, useAuth } from "@/auth/authContext";
+import { ToastContainer } from "react-toastify";
+import Footer from "./components/footer";
 
-import HeaderTabs from "./components/headerTabs"
-import { AuthProvider } from "@/auth/authContext"
-import { ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
+    <>
       <HeaderTabs />
       <main>{children}</main>
-      <ToastContainer position="top-right" autoClose={3000} toastClassName="text-lg font-semibold" />
+      {user && <Footer />}
+
+      <ToastContainer
+        containerId="app"
+        position="top-right"
+        autoClose={3000}
+        pauseOnFocusLoss={false}
+        toastClassName="text-lg font-semibold"
+      />
+    </>
+  );
+}
+
+export default function ClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AuthProvider>
+      <LayoutContent>{children}</LayoutContent>
     </AuthProvider>
-  )
+  );
 }

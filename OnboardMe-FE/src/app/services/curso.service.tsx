@@ -1,5 +1,6 @@
 import api from "./Api";
 import { Course } from "../models/Course";
+import { CourseSummary } from "../models/CourseSummary";
 
 // Obtener todos los cursos
 export const getCourses = async (): Promise<Course[]> => {
@@ -20,13 +21,18 @@ export const getCoursesByUser = async (idLegajo: number): Promise<Course[]> => {
 };
 
 // Marcar curso como favorito
-export const favCourse = async (idCourse: number, idUser: number): Promise<void> => {
+export const favCourse = async (
+  idCourse: number,
+  idUser: number,
+): Promise<void> => {
   const response = await api.post(`/courses/favorite/${idCourse}/${idUser}`);
   return response.data;
 };
 
 // Crear un curso nuevo
-export const createCourse = async (course: Omit<Course, "id" | "createdDate">): Promise<Course> => {
+export const createCourse = async (
+  course: Omit<Course, "id" | "createdDate">,
+): Promise<Course> => {
   const response = await api.post<Course>("/courses/create", course);
   return response.data;
 };
@@ -34,7 +40,7 @@ export const createCourse = async (course: Omit<Course, "id" | "createdDate">): 
 // Actualizar un curso existente
 export const updateCourse = async (
   id: number,
-  course: Partial<Omit<Course, "id">>
+  course: Partial<Omit<Course, "id">>,
 ): Promise<Course> => {
   const response = await api.put<Course>(`/courses/${id}`, course);
   return response.data;
@@ -46,8 +52,13 @@ export const deleteCourse = async (id: number): Promise<void> => {
 };
 
 // Devuelve el porcentaje total completado del curso
-export const getCourseProgress = async (courseId: number, userId: number): Promise<number> => {
-  const response = await api.get<number>(`/courses/progress/${courseId}/${userId}`);
+export const getCourseProgress = async (
+  courseId: number,
+  userId: number,
+): Promise<number> => {
+  const response = await api.get<number>(
+    `/courses/progress/${courseId}/${userId}`,
+  );
   return response.data;
 };
 
@@ -55,10 +66,10 @@ export const getCourseProgress = async (courseId: number, userId: number): Promi
 export const updateCourseProgress = async (
   courseId: number,
   userId: number,
-  sectionId: number
+  sectionId: number,
 ): Promise<void> => {
   const response = await api.post<void>(
-    `/courses/progress/${courseId}/${userId}/${sectionId}`
+    `/courses/progress/${courseId}/${userId}/${sectionId}`,
   );
   return response.data;
 };
@@ -67,7 +78,17 @@ export const updateCourseProgress = async (
 export const assignCourse = async (
   courseId: number,
   buddyId: number,
-  userId: number
+  userId: number,
 ): Promise<void> => {
   await api.post<void>(`/courses/assign/${courseId}/${buddyId}/${userId}`);
+};
+
+export const getFavoriteCoursesSummaryByUser = async (userId: number): Promise<CourseSummary[]> => {
+    const response = await api.get<CourseSummary[]>(`/courses/favorites/${userId}`);
+    return response.data;
+};
+
+export const getCoursesForCalendar = async (userId: number): Promise<CourseSummary[]> => {
+    const res = await api.get<CourseSummary[]>(`/courses/calendar/${userId}`);
+    return res.data;
 };

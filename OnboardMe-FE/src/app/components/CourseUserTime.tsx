@@ -1,159 +1,271 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { getCourses } from "@/app/services/curso.service"
-import { getMetric } from "@/app/services/metrics.service"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
-import { Label } from "@/app/components/ui/label"
-import { Clock, TrendingUp, Users, Award, BarChart3 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react";
+import { getCourses } from "@/app/services/curso.service";
+import { getMetric } from "@/app/services/metrics.service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { Label } from "@/app/components/ui/label";
+import { Button } from "@/app/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/app/components/ui/command";
+import { Check, ChevronDown } from "lucide-react";
 
-type DataPoint = { label: string; value: number }
-type Row = { user: string; days: number | null; progressPct: number }
-interface Props { buddyId?: number }
+import { Clock, TrendingUp, Users, Award, BarChart3 } from "lucide-react";
+
+type DataPoint = { label: string; value: number };
+type Row = { user: string; days: number | null; progressPct: number };
+interface Props {
+  buddyId?: number;
+}
 
 function toPct0_100(v: unknown) {
-  const n = Number(v)
-  if (!Number.isFinite(n)) return 0
-  return Math.max(0, Math.min(100, n <= 1 ? n * 100 : n))
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, n <= 1 ? n * 100 : n));
 }
 function daysText(days: number | null, pct: number) {
-  if (days == null) return "—"
-  const d = Number(days).toFixed(1)
-  const unit = "\u00A0días"
-  if (pct >= 100) return `${d}${unit}`
-  return `lleva\u00A0${d}${unit}`
+  if (days == null) return "—";
+  const d = Number(days).toFixed(1);
+  const unit = "\u00A0días";
+  if (pct >= 100) return `${d}${unit}`;
+  return `lleva\u00A0${d}${unit}`;
 }
 function getInitials(name: string) {
-  return name.split(" ").map(n => n.charAt(0)).join("").toUpperCase().slice(0, 2)
+  return name
+    .split(" ")
+    .map((n) => n.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function CourseUserTime({ buddyId }: Props) {
-  const [courses, setCourses] = useState<Array<{ id: number; title: string }>>([])
-  const [courseId, setCourseId] = useState<number | null>(null)
-  const [sortBy, setSortBy] = useState<"days" | "label">("days")
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [rows, setRows] = useState<Row[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [courses, setCourses] = useState<
+    Array<{ id: number; title: string; area?: string }>
+  >([]);
+  const [courseId, setCourseId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<"days" | "label">("days");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [openCourseCbx, setOpenCourseCbx] = useState(false);
 
   useEffect(() => {
     getCourses()
       .then((arr: any[]) => {
-        const mapped = (arr || []).map((c: any) => ({ id: c.id, title: c.title }))
-        setCourses(mapped)
-        if (!courseId && mapped.length) setCourseId(mapped[0].id)
+          const mapped = (arr || []).map((c: any) => ({
+              id: c.id,
+              title: c.title,
+              area: (c?.area?.name ?? c?.area ?? c?.category?.name ?? "") as string | undefined,
+          }));
+
+          const ordered = [...mapped].sort((a, b) =>
+              a.title.localeCompare(b.title, "es", { sensitivity: "base", numeric: true })
+          );
+
+          setCourses(ordered);
+          if (!courseId && ordered.length) setCourseId(ordered[0].id);
       })
-      .catch(() => setCourses([]))
-  }, [])
+      .catch(() => setCourses([]));
+  }, []);
 
   useEffect(() => {
-    if (!courseId) return
-    setLoading(true)
-    setError(null)
+    if (!courseId) return;
+    setLoading(true);
+    setError(null);
 
     const p1 = getMetric("COURSE_USER_PROGRESS", {
       idCourse: Number(courseId),
       ...(buddyId ? { idBuddy: buddyId } : {}),
-    }).then((r: any) => (Array.isArray(r?.data?.data) ? (r.data.data as DataPoint[]) : []))
+    }).then((r: any) =>
+      Array.isArray(r?.data?.data) ? (r.data.data as DataPoint[]) : [],
+    );
 
     const p2 = getMetric("COURSE_USER_ELAPSED_DAYS", {
       idCourse: Number(courseId),
       ...(buddyId ? { idBuddy: buddyId } : {}),
-    }).then((r: any) => (Array.isArray(r?.data?.data) ? (r.data.data as DataPoint[]) : []))
+    }).then((r: any) =>
+      Array.isArray(r?.data?.data) ? (r.data.data as DataPoint[]) : [],
+    );
 
     Promise.all([p1, p2])
       .then(([prog, days]) => {
-        const pMap = new Map(prog.map((x) => [x.label, toPct0_100(x.value)]))
-        const dMap = new Map(days.map((x) => [x.label, Number(x.value)]))
-        const users = Array.from(new Set([...prog.map((x) => x.label), ...days.map((x) => x.label)]))
+        const pMap = new Map(prog.map((x) => [x.label, toPct0_100(x.value)]));
+        const dMap = new Map(days.map((x) => [x.label, Number(x.value)]));
+        const users = Array.from(
+          new Set([...prog.map((x) => x.label), ...days.map((x) => x.label)]),
+        );
         const merged: Row[] = users.map((u) => ({
           user: u,
           progressPct: pMap.get(u) ?? 0,
           days: dMap.has(u) ? (dMap.get(u) as number) : null,
-        }))
-        setRows(merged)
+        }));
+        setRows(merged);
       })
       .catch(() => {
-        setRows([])
-        setError("No se pudieron cargar las métricas del curso")
+        setRows([]);
+        setError("No se pudieron cargar las métricas del curso");
       })
-      .finally(() => setLoading(false))
-  }, [courseId, buddyId])
+      .finally(() => setLoading(false));
+  }, [courseId, buddyId]);
 
-  const completed = useMemo(() => rows.filter((r) => r.progressPct >= 100 && r.days != null), [rows])
+  const completed = useMemo(
+    () => rows.filter((r) => r.progressPct >= 100 && r.days != null),
+    [rows],
+  );
   const avgDays = useMemo(() => {
-    if (!completed.length) return null
-    const s = completed.reduce((acc, r) => acc + (r.days as number), 0)
-    return s / completed.length
-  }, [completed])
-  const fastest = useMemo(() => completed.length ? completed.reduce((min, r) => (min == null || (r.days as number) < (min.days as number) ? r : min), null as Row | null) : null, [completed])
-  const slowest = useMemo(() => completed.length ? completed.reduce((max, r) => (max == null || (r.days as number) > (max.days as number) ? r : max), null as Row | null) : null, [completed])
+    if (!completed.length) return null;
+    const s = completed.reduce((acc, r) => acc + (r.days as number), 0);
+    return s / completed.length;
+  }, [completed]);
+  const fastest = useMemo(
+    () =>
+      completed.length
+        ? completed.reduce(
+          (min, r) =>
+            min == null || (r.days as number) < (min.days as number)
+              ? r
+              : min,
+          null as Row | null,
+        )
+        : null,
+    [completed],
+  );
+  const slowest = useMemo(
+    () =>
+      completed.length
+        ? completed.reduce(
+          (max, r) =>
+            max == null || (r.days as number) > (max.days as number)
+              ? r
+              : max,
+          null as Row | null,
+        )
+        : null,
+    [completed],
+  );
 
   const sorted = useMemo(() => {
-    const a = [...rows]
+    const a = [...rows];
     a.sort((x, y) => {
       if (sortBy === "label") {
-        const cmp = x.user.toLowerCase().localeCompare(y.user.toLowerCase())
-        return sortDir === "asc" ? cmp : -cmp
+        const cmp = x.user.toLowerCase().localeCompare(y.user.toLowerCase());
+        return sortDir === "asc" ? cmp : -cmp;
       } else {
-        const xv = x.days, yv = y.days
-        if (xv === null && yv === null) return 0
-        if (xv === null) return sortDir === "asc" ? 1 : -1
-        if (yv === null) return sortDir === "asc" ? -1 : 1
-        const cmp = xv - yv
-        return sortDir === "asc" ? cmp : -cmp
+        const xv = x.days,
+          yv = y.days;
+        if (xv === null && yv === null) return 0;
+        if (xv === null) return sortDir === "asc" ? 1 : -1;
+        if (yv === null) return sortDir === "asc" ? -1 : 1;
+        const cmp = xv - yv;
+        return sortDir === "asc" ? cmp : -cmp;
       }
-    })
-    return a
-  }, [rows, sortBy, sortDir])
+    });
+    return a;
+  }, [rows, sortBy, sortDir]);
 
   return (
-    <section className="space-y-8">
-      {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6">
-        <div className="flex items-center space-x-4">
-          <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-            <Clock className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Tiempo por Usuario</h1>
-            <p className="text-gray-600 text-sm mt-1">
-              Analiza el tiempo que tardan los usuarios en completar cursos
-            </p>
-          </div>
-        </div>
-      </div>
+    <section className="space-y-3">
 
       {/* Filtros */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6">
         <div className="flex items-center space-x-2 mb-4">
           <BarChart3 className="h-6 w-6 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Filtros y Configuración</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Filtros y Configuración
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Curso</Label>
-            <Select
-              value={courseId?.toString() || ""}
-              onValueChange={(value) => setCourseId(value ? Number(value) : null)}
-            >
-              <SelectTrigger className="bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300">
-                <SelectValue placeholder="Seleccionar curso" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-xl">
-                {courses.map((c) => (
-                  <SelectItem key={c.id} value={c.id.toString()}>
-                    {c.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            <Popover open={openCourseCbx} onOpenChange={setOpenCourseCbx}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCourseCbx}
+                  className="w-full justify-between bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                >
+                  {(() => {
+                    const sel = courses.find((c) => c.id === courseId);
+                    if (!sel) return "Seleccionar curso";
+                    return (
+                      <span className="flex w-full items-center justify-between gap-2">
+                        <span className="truncate">{sel.title}</span>
+                        {sel.area && (
+                          <span className="shrink-0 text-xs text-gray-500">
+                            · {sel.area}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
+                  <ChevronDown
+                    className={`ml-2 h-4 w-4 opacity-50 transition-transform ${openCourseCbx ? "rotate-180" : ""}`}
+                  />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar por curso o área" />
+                  <CommandEmpty>Sin resultados</CommandEmpty>
+                  <CommandGroup>
+                    {courses.map((c) => (
+                      <CommandItem
+                        key={c.id}
+                        value={`${c.title} ${c.area ?? ""}`}
+                        onSelect={() => {
+                          setCourseId(c.id);
+                          setOpenCourseCbx(false);
+                        }}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Check
+                            className={`h-4 w-4 ${c.id === courseId ? "opacity-100" : "opacity-0"}`}
+                          />
+                          <span className="truncate">{c.title}</span>
+                        </div>
+                        {c.area && (
+                          <span className="shrink-0 text-xs text-gray-500">
+                            · {c.area}
+                          </span>
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Ordenar por</Label>
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as "days" | "label")}>
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as "days" | "label")}
+            >
               <SelectTrigger className="bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300">
                 <SelectValue />
               </SelectTrigger>
@@ -166,7 +278,10 @@ export default function CourseUserTime({ buddyId }: Props) {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Dirección</Label>
-            <Select value={sortDir} onValueChange={(value) => setSortDir(value as "asc" | "desc")}>
+            <Select
+              value={sortDir}
+              onValueChange={(value) => setSortDir(value as "asc" | "desc")}
+            >
               <SelectTrigger className="bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300">
                 <SelectValue />
               </SelectTrigger>
@@ -184,7 +299,9 @@ export default function CourseUserTime({ buddyId }: Props) {
         <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Promedio de Finalización</p>
+              <p className="text-sm font-medium text-gray-600">
+                Promedio de Finalización
+              </p>
               <p className="text-3xl font-bold text-gray-900 tabular-nums">
                 {avgDays != null ? `${avgDays.toFixed(1)}` : "—"}
               </p>
@@ -200,9 +317,13 @@ export default function CourseUserTime({ buddyId }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Más Rápido</p>
-              <p className="text-lg font-semibold text-gray-900">{fastest?.user ?? "—"}</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {fastest?.user ?? "—"}
+              </p>
               <p className="text-sm text-gray-500 tabular-nums">
-                {fastest?.days != null ? `${fastest.days.toFixed(1)} días` : "—"}
+                {fastest?.days != null
+                  ? `${fastest.days.toFixed(1)} días`
+                  : "—"}
               </p>
             </div>
             <div className="h-12 w-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
@@ -215,9 +336,13 @@ export default function CourseUserTime({ buddyId }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Más Lento</p>
-              <p className="text-lg font-semibold text-gray-900">{slowest?.user ?? "—"}</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {slowest?.user ?? "—"}
+              </p>
               <p className="text-sm text-gray-500 tabular-nums">
-                {slowest?.days != null ? `${slowest.days.toFixed(1)} días` : "—"}
+                {slowest?.days != null
+                  ? `${slowest.days.toFixed(1)} días`
+                  : "—"}
               </p>
             </div>
             <div className="h-12 w-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-lg flex items-center justify-center">
@@ -232,9 +357,10 @@ export default function CourseUserTime({ buddyId }: Props) {
         <div className="p-6 pb-4">
           <div className="flex items-center space-x-2 mb-2">
             <Users className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Detalle por Usuario</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Detalle por Usuario
+            </h2>
           </div>
-          <p className="text-gray-600 text-sm">Progreso y tiempo de cada usuario en el curso seleccionado</p>
         </div>
 
         <div className="overflow-hidden">
@@ -266,10 +392,18 @@ export default function CourseUserTime({ buddyId }: Props) {
 
                 <thead className="sticky top-0 bg-gray-50/95 backdrop-blur border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">#</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Usuario</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Progreso</th>
-                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Tiempo</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                      #
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                      Usuario
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                      Progreso
+                    </th>
+                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">
+                      Tiempo
+                    </th>
                   </tr>
                 </thead>
 
@@ -279,29 +413,41 @@ export default function CourseUserTime({ buddyId }: Props) {
                       <td colSpan={4} className="px-4 py-12 text-center">
                         <div className="flex flex-col items-center space-y-3">
                           <Users className="h-12 w-12 text-gray-300" />
-                          <p className="text-gray-500 font-medium">Sin datos para este curso</p>
+                          <p className="text-gray-500 font-medium">
+                            Sin datos para este curso
+                          </p>
                           <p className="text-gray-400 text-sm">
-                            Selecciona un curso diferente o verifica que tenga usuarios asignados
+                            Selecciona un curso diferente o verifica que tenga
+                            usuarios asignados
                           </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     sorted.map((r, idx) => {
-                      const pct = Math.round(toPct0_100(r.progressPct))
-                      const w = Math.max(0, Math.min(100, pct))
-                      const inProgress = pct < 100
+                      const pct = Math.round(toPct0_100(r.progressPct));
+                      const w = Math.max(0, Math.min(100, pct));
+                      const inProgress = pct < 100;
 
                       return (
-                        <tr key={r.user + idx} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
+                        <tr
+                          key={r.user + idx}
+                          className="hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {idx + 1}
+                          </td>
 
                           <td className="px-4 py-3">
                             <div className="flex items-center space-x-3 min-w-0">
                               <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
-                                <span className="text-white text-xs font-bold">{getInitials(r.user)}</span>
+                                <span className="text-white text-xs font-bold">
+                                  {getInitials(r.user)}
+                                </span>
                               </div>
-                              <span className="text-sm font-medium text-gray-900 truncate">{r.user}</span>
+                              <span className="text-sm font-medium text-gray-900 truncate">
+                                {r.user}
+                              </span>
                             </div>
                           </td>
 
@@ -309,8 +455,12 @@ export default function CourseUserTime({ buddyId }: Props) {
                             <div className="flex items-center space-x-3">
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs text-gray-600">Progreso</span>
-                                  <span className="text-xs font-medium text-gray-900">{pct}%</span>
+                                  <span className="text-xs text-gray-600">
+                                    Progreso
+                                  </span>
+                                  <span className="text-xs font-medium text-gray-900">
+                                    {pct}%
+                                  </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div
@@ -331,7 +481,7 @@ export default function CourseUserTime({ buddyId }: Props) {
                             </span>
                           </td>
                         </tr>
-                      )
+                      );
                     })
                   )}
                 </tbody>
@@ -341,5 +491,5 @@ export default function CourseUserTime({ buddyId }: Props) {
         </div>
       </div>
     </section>
-  )
+  );
 }

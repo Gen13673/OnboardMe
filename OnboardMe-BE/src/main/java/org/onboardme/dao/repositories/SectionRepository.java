@@ -10,4 +10,7 @@ import java.util.Optional;
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
     Optional<Section> findByTitle(String title);
+
+    Optional<Section> findByCourseIdAndTitle(Long courseId, String title);
+
 }

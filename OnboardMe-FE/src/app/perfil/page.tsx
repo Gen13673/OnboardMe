@@ -1,29 +1,120 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Bell, Calendar, Heart, Mail, MapPin, MessageCircle, Phone, Users } from "lucide-react";
+import {
+  Calendar,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Eye,
+  EyeOff,
+  Lock,
+  Copy,
+} from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { useAuth } from "@/auth/authContext";
 import { Separator } from "../components/ui/separator";
 import { RoleName } from "@/auth/permissions";
-import { getUsersByBuddy } from "../services/usuario.service";
-import type { User } from "@/app/models/User"
+import {
+  getUsersByBuddy,
+  changePassword,
+  getUserById,
+} from "../services/usuario.service";
+import type { User } from "@/app/models/User";
 import { UserAvatar } from "../components/UserAvatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
-import { Copy } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ChatWidget from "../components/ChatWidget";
 
-export default function AyudaPage() {
-
-  const { user } = useAuth()
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+export default function PerfilPage() {
+  const { user } = useAuth();
+  const [fullUser, setFullUser] = useState<User | null>(null);
+  const [mentees, setMentees] = useState<User[]>([]);
   const [contactOpen, setContactOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<User | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (!user) return;
 
-  const isBuddy = user?.role.name === RoleName.BUDDY
-  const [mentees, setMentees] = useState<User[]>([])
+    async function fetchData() {
+      try {
+        const response = await getUserById(user.id);
+        setFullUser(response);
+
+        if (user.role.name === RoleName.BUDDY) {
+          const menteesList = await getUsersByBuddy(user.id);
+          setMentees(menteesList);
+        }
+      } catch (error) {
+        console.error("Error al cargar datos del usuario:", error);
+      }
+    }
+
+    fetchData();
+  }, [user]);
+
+  const isBuddy = fullUser?.role.name === RoleName.BUDDY;
+
+  async function handleChangePassword() {
+    if (!user) return;
+    if (!newPassword || !confirmPassword)
+      return toast.error("Debe completar ambos campos.");
+    if (newPassword !== confirmPassword)
+      return toast.error("Las contraseñas no coinciden.");
+
+    try {
+      setLoading(true);
+      await changePassword(user.id, { newPassword, confirmPassword });
+      toast.success("Contraseña actualizada correctamente.");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordOpen(false);
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message || "No se pudo actualizar la contraseña."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openContact(u: User) {
+    setSelectedContact(u);
+    setContactOpen(true);
+  }
+
+  function normalizePhoneForWhatsApp(phone?: string) {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.startsWith("549")) return digits;
+    if (digits.startsWith("54")) return "549" + digits.slice(2);
+    return "549" + digits;
+  }
 
   const faqs = [
     {
@@ -34,363 +125,409 @@ export default function AyudaPage() {
     {
       question: "¿Qué hago si un curso no carga?",
       answer:
-        "Probá recargar la página. Si el problema persiste, contactá a soporte para asistencia técnica.",
+        "Probá recargar la página. Si el problema persiste, contactá a soporte.",
     },
     {
-      question: "¿Cómo marco un curso como favorito?",
+      question: "¿Cómo cambio mi contraseña?",
+      answer: "Podés hacerlo desde la sección 'Acciones Rápidas' dentro de tu perfil.",
+    },
+    {
+      question: "¿Cómo contacto a mi mentor?",
+      answer: "En la sección de tu perfil, vas a ver quién es tu mentor asignado y podés enviarle un mensaje directo.",
+    },
+    {
+      question: "¿Qué hago si olvidé mi contraseña?",
       answer:
-        "Simplemente hacé clic en la estrella al lado del nombre del curso para marcarlo como favorito.",
+        "En la página de login, hacé clic en 'Olvidé mi contraseña' y seguí las instrucciones para restablecerla.",
     },
   ];
 
-  useEffect(() => {
-    if (!user) return
-    getUsersByBuddy(user.id).then(setMentees)
-  }, [user])
-
-  function openContact(u: User) {
-    setSelectedContact(u);
-    setContactOpen(true);
-  }
-
-  // WhatsApp: intenta normalizar a formato internacional AR (549...)
-  function normalizePhoneForWhatsApp(phone?: string) {
-    if (!phone) return "";
-    const digits = phone.replace(/\D/g, "");
-    if (digits.startsWith("549")) return digits;
-    if (digits.startsWith("54")) return "549" + digits.slice(2);
-    return "549" + digits; // heurística simple
-  }
-
-  async function copyToClipboard(text?: string) {
-    if (!text) return;
-    try { await navigator.clipboard.writeText(text); } catch { }
-  }
-
   return (
-
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <div className="flex items-start gap-6 mb-6">
-            <UserAvatar firstName={user?.firstName} lastName={user?.lastName} size="sm" />
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </h1>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700" style={{ paddingTop: "0.2em" }}>
-                  {user?.role.name}
-                </Badge>
-              </div>
-              {/* <p className="text-xl text-gray-600 mb-2">{user?.position}</p>
-              <p className="text-gray-500">{user?.department}</p> */}
+    <main>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-md">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative max-w-7xl mx-auto px-6 py-10">
+            <div className="flex items-center space-x-6">
+              <UserAvatar
+                firstName={fullUser?.firstName}
+                lastName={fullUser?.lastName}
+                size="sm"
+              />
               <div>
-                {user?.birthDate && (
-                  <p className="font-medium text-sm text-gray-500">
-                    En la empresa desde {new Date(user?.createdDate).toLocaleDateString("es-ES")}
-                  </p>
-                )}
+                <h1 className="text-3xl font-bold text-white">
+                  {fullUser?.firstName} {fullUser?.lastName}
+                </h1>
+                <p className="text-blue-100 text-sm">
+                  {fullUser?.role.name} · En la empresa desde{" "}
+                  {fullUser?.createdDate
+                    ? new Date(fullUser.createdDate + 'Z').toLocaleDateString('es-ES', {
+                      timeZone: 'UTC',
+                    })
+                    : ""}
+                </p>
               </div>
-
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
+        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <Card className="bg-white/80 backdrop-blur border-0 shadow-md hover:shadow-lg transition-all">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {/* <User className="h-5 w-5" /> */}
-                  Información Personal
+                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  🧍 Información Personal
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{user?.email}</p>
-                    </div>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium text-gray-800">{fullUser?.email}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Teléfono</p>
-                      {<p className="font-medium">{user?.phone}</p>}
-                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Teléfono</p>
+                    <p className="font-medium text-gray-800">{fullUser?.phone}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Dirección</p>
-                      {<p className="font-medium">{user?.address}</p>}
-                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Dirección</p>
+                    <p className="font-medium text-gray-800">{fullUser?.address}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
-                      {user?.birthDate && (
-                        <p className="font-medium">
-                          {new Date(user.birthDate).toLocaleDateString("es-ES")}
-                        </p>
-                      )}
-                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
+                    {fullUser?.birthDate && (
+                      <p className="font-medium text-gray-800">
+                        {new Date(fullUser.birthDate).toLocaleDateString("es-ES", {
+                          timeZone: "UTC",
+                        })}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {isBuddy && mentees.length > 0 && (
-              <Card>
+              <Card className="bg-white/80 backdrop-blur border-0 shadow-md hover:shadow-lg transition-all">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    Empleados Asignados
+                  <CardTitle className="flex items-center gap-2 text-gray-900">
+                    👥 Empleados Asignados
                     <Badge variant="secondary" className="ml-2">
-                      {/* {{ mentees.length }} */}
+                      {mentees.length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {mentees.map((employee, index) => (
-
                     <div key={employee.id}>
                       <div className="flex items-center gap-4">
-                        <UserAvatar firstName={employee?.firstName} lastName={employee?.lastName} size="sm" />
+                        <UserAvatar
+                          firstName={employee.firstName}
+                          lastName={employee.lastName}
+                          size="sm"
+                        />
                         <div className="flex-1">
-                          <p className="font-medium">{employee.firstName + " " + employee.lastName}</p>
-                          {/* <p className="text-sm text-gray-600">{employee.position}</p>*/}
-                          <div>
-                            {user?.birthDate && (
-                              <p className="font-medium text-sm text-gray-500">
-                                En la empresa desde {new Date(employee?.createdDate).toLocaleDateString("es-ES")}
-                              </p>
+                          <p className="font-medium text-gray-800">
+                            {employee.firstName} {employee.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            En la empresa desde{" "}
+                            {new Date(employee.createdDate).toLocaleDateString(
+                              "es-ES",
+                              { timeZone: "UTC" }
                             )}
-                          </div>
+                          </p>
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openContact(employee)} title="Ver contacto">
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openContact(employee)}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Contactar
+                        </Button>
                       </div>
-                      {index < mentees.length - 1 && <Separator className="mt-4" />}
+                      {index < mentees.length - 1 && (
+                        <Separator className="mt-4" />
+                      )}
                     </div>
                   ))}
                 </CardContent>
               </Card>
             )}
+
+            <Card className="bg-white/80 backdrop-blur border-0 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  ❓ Preguntas Frecuentes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {faqs.map((faq, i) => {
+                  const isOpen = openIndex === i;
+                  return (
+                    <div
+                      key={i}
+                      className="border border-gray-200 rounded-lg overflow-hidden bg-white/70 transition-shadow hover:shadow-md"
+                    >
+                      <button
+                        className="w-full flex justify-between items-center px-5 py-3 text-left focus:outline-none hover:bg-transparent !important"
+                        onClick={() =>
+                          setOpenIndex((prev) => (prev === i ? null : i))
+                        }
+                      >
+                        <span className="font-medium text-gray-800">{faq.question}</span>
+                        <span className="text-blue-500 text-xl">{isOpen ? "−" : "+"}</span>
+                      </button>
+                      {isOpen && (
+                        <div className="px-5 pb-3 text-sm text-gray-600 bg-white/70">
+                          {faq.answer}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
           </div>
 
-
-          <div className="space-y-6">
-            {user?.buddy && (
-              <Card>
+          <div className="space-y-8">
+            {fullUser?.buddy && (
+              <Card className="bg-white/80 backdrop-blur border-0 shadow-md hover:shadow-lg transition-all">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Tu Buddy Asignado
+                  <CardTitle className="flex items-center gap-2 text-gray-900">
+                    🧑‍🤝‍🧑 Tu Buddy Asignado
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 mb-4">
-                    <UserAvatar firstName={user?.buddy?.firstName} lastName={user?.buddy?.lastName} size="sm" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{user?.buddy?.firstName + " " + user?.buddy?.lastName}</h3>
-                      {/* <p className="text-gray-600">{user?.buddy.position}</p> */}
-                      <p className="text-sm text-gray-500">{user?.buddy?.email}</p>
+                    <UserAvatar
+                      firstName={fullUser.buddy.firstName}
+                      lastName={fullUser.buddy.lastName}
+                      size="sm"
+                    />
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {fullUser.buddy.firstName} {fullUser.buddy.lastName}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {fullUser.buddy.email}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => user?.buddy && openContact(user.buddy)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Mensaje
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => fullUser.buddy && openContact(fullUser.buddy)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" /> Enviar Mensaje
+                  </Button>
                 </CardContent>
               </Card>
             )}
-            <Card>
+
+            <Card className="bg-white/80 backdrop-blur border-0 shadow-md hover:shadow-lg transition-all">
               <CardHeader>
-                <CardTitle>Acciones Rápidas</CardTitle>
+                <CardTitle className="text-gray-900">⚙️ Acciones Rápidas</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {/* <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <User className="h-4 w-4 mr-2" />
-                  Editar Perfil
-                </Button> */}
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Configurar Notificaciones
-                </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Ver Calendario
+              <CardContent className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setPasswordOpen(true)}
+                >
+                  <Lock className="h-4 w-4 mr-2" /> Cambiar Contraseña
                 </Button>
               </CardContent>
             </Card>
           </div>
         </div>
-        <div className="container mx-auto py-10 px-4">
-          <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6 md:p-10">
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">
-              🤔 Preguntas Frecuentes
-            </h1>
+      </div>
 
-            <div className="space-y-5">
-              {faqs.map((faq, index) => {
-                const isOpen = openIndex === index;
-
-                return (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
-                  >
-                    <button
-                      className="w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-gray-50 transition-all"
-                      onClick={() =>
-                        setOpenIndex((prev) => (prev === index ? null : index))
-                      }
-                    >
-                      <span className="text-gray-800 font-semibold text-base md:text-lg">
-                        {faq.question}
-                      </span>
-                      <span className="text-gray-400 text-xl font-bold">
-                        {isOpen ? "−" : "+"}
-                      </span>
-                    </button>
-
-                    {isOpen && (
-                      <div className="px-5 pb-4 text-gray-600 text-sm md:text-base transition-all duration-300 ease-in-out bg-gray-50">
-                        {faq.answer}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-12 border-t pt-6 text-center text-gray-700 text-sm space-y-2">
-              <p>
-                📞 <strong>Teléfono:</strong> (011) 1234-5678
-              </p>
-              <p>
-                ✉️ <strong>Email:</strong>{" "}
-                <a
-                  href="mailto:soporte@empresa.com"
-                  className="text-blue-600 hover:underline"
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Cambiar Contraseña</DialogTitle>
+            <DialogDescription>
+              Ingresá y confirmá tu nueva contraseña.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nueva Contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="********"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:bg-transparent focus:outline-none"
+                  onClick={() => setShowNewPassword((p) => !p)}
                 >
-                  soporte@empresa.com
-                </a>
-              </p>
+                  {showNewPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="********"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:bg-transparent focus:outline-none"
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <Dialog open={contactOpen} onOpenChange={setContactOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Contacto del Empleado</DialogTitle>
-              <DialogDescription>Información para comunicarte rápidamente.</DialogDescription>
-            </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleChangePassword} disabled={loading}>
+              {loading ? "Guardando..." : "Actualizar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            {selectedContact && (
-              <div className="space-y-4">
-                {/* Cabecera con avatar y nombre */}
-                <div className="flex items-center gap-3">
-                  <UserAvatar firstName={selectedContact.firstName} lastName={selectedContact.lastName} size="sm" />
-                  <div>
-                    <p className="font-semibold text-lg">
-                      {selectedContact.firstName} {selectedContact.lastName}
+      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Contacto del Empleado</DialogTitle>
+          </DialogHeader>
+          {selectedContact && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  firstName={selectedContact.firstName}
+                  lastName={selectedContact.lastName}
+                  size="sm"
+                />
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {selectedContact.firstName} {selectedContact.lastName}
+                  </p>
+                  {selectedContact.address && (
+                    <p className="text-xs text-gray-500">
+                      {selectedContact.address}
                     </p>
-                    {selectedContact.address && (
-                      <p className="text-xs text-gray-500">{selectedContact.address}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Datos */}
-                <div className="grid gap-3 text-sm">
-                  {/* Email */}
-                  {selectedContact.email && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        <a
-                          href={`mailto:${selectedContact.email}`}
-                          className="font-medium hover:underline"
-                        >
-                          {selectedContact.email}
-                        </a>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => copyToClipboard(selectedContact.email)} title="Copiar email">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Teléfono */}
-                  {selectedContact.phone && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <a
-                          href={`tel:${selectedContact.phone}`}
-                          className="font-medium hover:underline"
-                        >
-                          {selectedContact.phone}
-                        </a>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => copyToClipboard(selectedContact.phone)} title="Copiar teléfono">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Acciones rápidas */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {selectedContact.email && (
-                    <Button asChild>
-                      <a href={`mailto:${selectedContact.email}`}>
-                        Enviar Email
-                      </a>
-                    </Button>
-                  )}
-                  {selectedContact.phone && (
-                    <Button variant="secondary" asChild>
-                      <a href={`tel:${selectedContact.phone}`}>
-                        Llamar
-                      </a>
-                    </Button>
-                  )}
-                  {selectedContact.phone && (
-                    <Button variant="outline" asChild>
-                      <a
-                        href={`https://wa.me/${normalizePhoneForWhatsApp(selectedContact.phone)}?text=${encodeURIComponent(
-                          `Hola ${selectedContact.firstName}, ¿cómo estás?`
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        WhatsApp
-                      </a>
-                    </Button>
                   )}
                 </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
 
+              <div className="grid gap-3 text-sm">
+                {selectedContact.email && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-blue-500" />
+                      <a
+                        href={`mailto:${selectedContact.email}`}
+                        className="font-medium text-gray-800 hover:underline"
+                      >
+                        {selectedContact.email}
+                      </a>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        navigator.clipboard.writeText(selectedContact.email)
+                      }
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                {selectedContact.phone && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-blue-500" />
+                      <a
+                        href={`tel:${selectedContact.phone}`}
+                        className="font-medium text-gray-800 hover:underline"
+                      >
+                        {selectedContact.phone}
+                      </a>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        navigator.clipboard.writeText(selectedContact.phone)
+                      }
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedContact.email && (
+                  <Button asChild>
+                    <a href={`mailto:${selectedContact.email}`}>Enviar Email</a>
+                  </Button>
+                )}
+                {selectedContact.phone && (
+                  <Button variant="outline" asChild>
+                    <a
+                      href={`https://wa.me/${normalizePhoneForWhatsApp(
+                        selectedContact.phone
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      WhatsApp
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+      />
+      <ChatWidget />
+    </main>
   );
 }

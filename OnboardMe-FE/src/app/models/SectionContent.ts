@@ -1,6 +1,11 @@
-import type { ExamQuestion } from './exam'
+import type { ExamQuestion } from "./exam";
 
-export type SectionContentType = 'VIDEO' | 'DOCUMENT' | 'IMAGE' | 'EXAM';
+export type SectionContentType =
+  | "VIDEO"
+  | "DOCUMENT"
+  | "IMAGE"
+  | "EXAM"
+  | "SURVEY";
 
 export interface SectionContent {
   id: number;

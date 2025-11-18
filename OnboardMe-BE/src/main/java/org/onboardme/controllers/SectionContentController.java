@@ -2,9 +2,12 @@ package org.onboardme.controllers;
 
 import com.onboardme.api.SectionsApi;
 import com.onboardme.model.*;
+import org.eclipse.angus.mail.iap.Response;
 import org.onboardme.services.SectionContentService;
 import org.onboardme.services.ExamService;
+import org.onboardme.services.SurveyService;
 import org.onboardme.transformers.SectionContentTransformer;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,13 +17,15 @@ public class SectionContentController implements SectionsApi {
     private final SectionContentService sectionContentService;
     private final SectionContentTransformer sectionContentTransformer;
     private final ExamService examService;
+    private final SurveyService surveyService;
 
     public SectionContentController(SectionContentService sectionContentService,
                                     SectionContentTransformer sectionContentTransformer,
-                                    ExamService examService) {
+                                    ExamService examService, SurveyService surveyService) {
         this.sectionContentService = sectionContentService;
         this.sectionContentTransformer = sectionContentTransformer;
         this.examService = examService;
+        this.surveyService = surveyService;
     }
 
     @Override
@@ -64,5 +69,17 @@ public class SectionContentController implements SectionsApi {
         var content = sectionContentService.getContentBySection(sectionId);
         var response = sectionContentTransformer.buildSectionContentResponse(content);
         return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<Void> submitSurvey(Long sectionId, Long idUser, SurveySubmissionDTO surveySubmissionDTO) {
+        surveyService.submitSurvey(sectionId, idUser, surveySubmissionDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<SurveyResultDTO> getSurveyResult(Long sectionId, Long idUser) {
+        var result = surveyService.getSurveyResult(sectionId, idUser);
+        return ResponseEntity.ok(result);
     }
 }

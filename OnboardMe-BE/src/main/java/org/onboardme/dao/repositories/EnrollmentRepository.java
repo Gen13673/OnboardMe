@@ -28,5 +28,14 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer>
             @Param("idBuddy") Long idBuddy
     );
 
+    @Query("""
+        SELECT e
+        FROM Enrollment e
+        JOIN e.user u
+        WHERE u.buddy.id = :idBuddy
+    """)
+    List<Enrollment> findByBuddy(@Param("idBuddy") Long idBuddy);
+
+    List<Enrollment> findByUserId(Long userId);
 
 }

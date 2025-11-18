@@ -67,13 +67,15 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserDTO'
-  /users/upload:
+  /users/upload/{idUser}:
     post:
       tags:
         - User
       summary: Upload a CSV file to create multiple users
       description: Allows HR users to upload a CSV file containing new employees to create them in bulk.
       operationId: uploadUsersCsv
+      parameters:
+        - $ref: '#/components/parameters/idUser'
       requestBody:
         required: true
         content:
@@ -112,6 +114,172 @@ paths:
           description: Invalid file format or missing data
         '403':
           description: Forbidden - Only HR users can perform this action
+  /users/addUser:
+    post:
+      tags:
+        - User
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Invalid input data
+        '409':
+          description: User with the same email already exists
+  /users/buddy/bulk:
+    post:
+      tags: [ Users ]
+      operationId: assignBuddyBulk
+      summary: Asigna un buddy a múltiples usuarios en un único llamado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignBuddyBulkRequestDTO'
+      responses:
+        '200':
+          description: Resultado del procesamiento en lote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignBuddyBulkResponseDTO'
+        '400':
+          description: Datos inválidos
+        '403':
+          description: No autorizado
+  /users/overview:
+    get:
+      tags: [ Users ]
+      operationId: getUsersOverview
+      summary: "Listado de empleados para la grilla (overview)"
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+          description: "Filtro de búsqueda (nombre o email)"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+          required: false
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 50
+          required: false
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeesOverviewPageDTO'
+  /users/{idUser}/changepassword:
+    post:
+      tags:
+        - User
+      summary: Change user password
+      operationId: changePassword
+      parameters:
+        - $ref: '#/components/parameters/idUser'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequestDTO'
+      responses:
+        '200':
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password updated successfully"
+        '400':
+          description: Passwords do not match or invalid input
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+  /users/{email}/resetpassword:
+    post:
+      tags:
+        - User
+      summary: Reset user password
+      operationId: resetPassword
+      parameters:
+        - $ref: '#/components/parameters/email'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequestDTO'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset successfully"
+        '400':
+          description: Passwords do not match or invalid input
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /users/{idUser}/overview:
+    get:
+      tags: [ Users ]
+      operationId: getUserOverview
+      summary: Overview para un solo usuario
+      parameters:
+        - in: path
+          name: idUser
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Overview para un solo usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOverviewDTO'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido
+        '404':
+          description: Usuario no encontrado
 
   /courses:
     get:
@@ -192,7 +360,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CourseDTO'
+                  $ref: '#/components/schemas/CourseSummaryDTO'
   /courses/progress/{idCourse}/{idUser}:
     get:
       tags:
@@ -388,6 +556,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExamResultDTO'
+  /sections/{sectionId}/survey/submit/{idUser}:
+    post:
+      tags:
+        - Sections
+      summary: Submit exam answers
+      operationId: submitSurvey
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+        - $ref: '#/components/parameters/idUser'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveySubmissionDTO'
+      responses:
+        '200':
+          description: Survey submitted successfully
   /sections/{sectionId}/exam/result/{idUser}:
     get:
       tags:
@@ -404,6 +590,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExamResultDTO'
+  /sections/{sectionId}/survey/result/{idUser}:
+    get:
+      tags:
+        - Sections
+      summary: Get survey result for user
+      operationId: getSurveyResult
+      parameters:
+        - $ref: '#/components/parameters/sectionId'
+        - $ref: '#/components/parameters/idUser'
+      responses:
+        '200':
+          description: Exam result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyResultDTO'
+
   /courses/get/{idCourse}:
     get:
       tags:
@@ -419,6 +622,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CourseDTO'
+
+  /courses/calendar/{idUser}:
+    get:
+      tags: [ Courses ]
+      summary: Get lightweight courses for calendar with progress
+      operationId: getCoursesForCalendar
+      parameters:
+        - name: idUser
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Calendar-ready list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseSummaryDTO'
 
   /metrics:
     get:
@@ -480,22 +703,48 @@ paths:
         '404':
           description: Notification not found
 
-  /hello:
-    get:
+  /notifications/create:
+    post:
       tags:
-        - Hello
-      summary: Hello Endpoint
+        - Notifications
+      summary: create notification
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationDTO'
       responses:
         '200':
-          description: Returns a hello message
+          description: Notification was created
+        '404':
+          description: Notification not found
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User Login
+      description: Validates user credentials and returns a JWT token with user information.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDTO'
+      responses:
+        '200':
+          description: Successful login
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Hello, World!"
+                $ref: '#/components/schemas/LoginResponseDTO'
+        '400':
+          description: Invalid credentials or malformed request
+        '401':
+          description: Unauthorized - wrong email or password
 
 components:
   parameters:
@@ -531,6 +780,13 @@ components:
       schema:
         type: integer
         format: int64
+    email:
+      name: email
+      in: path
+      required: true
+      description: Emailr of the user
+      schema:
+        type: string
     idBuddyQuery:
       name: idBuddy
       in: query
@@ -691,6 +947,7 @@ components:
           DOCUMENT: DocumentContentDTO
           IMAGE: ImageContentDTO
           EXAM: ExamContentDTO
+          SURVEY: SurveyContentDTO
       properties:
         contentId:
           type: integer
@@ -700,7 +957,7 @@ components:
           format: int64
         type:
           type: string
-          enum: [ VIDEO, DOCUMENT, IMAGE, EXAM ]
+          enum: [ VIDEO, DOCUMENT, IMAGE, EXAM, SURVEY ]
 
     VideoContentDTO:
       allOf:
@@ -737,6 +994,15 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ExamQuestionDTO'
+    SurveyContentDTO:
+      allOf:
+        - $ref: '#/components/schemas/SectionContentDTO'
+        - type: object
+          properties:
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/SurveyQuestionDTO'
 
     ExamQuestionDTO:
       type: object
@@ -753,6 +1019,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExamOptionDTO'
+    SurveyQuestionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
+        type:
+          type: string
+          enum: [ SINGLE_CHOICE, MULTIPLE_CHOICE ]
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyOptionDTO'
 
     ExamOptionDTO:
       type: object
@@ -764,6 +1045,14 @@ components:
           type: string
         correct:
           type: boolean
+    SurveyOptionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
 
     MetricTypeDTO:
       type: string
@@ -772,10 +1061,14 @@ components:
         - COURSE_USER_PROGRESS
         - COURSE_USER_ELAPSED_DAYS
         - USER_COURSE_COMPLETION
+        - EXAM_RESULTS
+        - SURVEY_FEEDBACK
       x-enum-varnames:
         - COURSE_USER_PROGRESS
         - COURSE_USER_ELAPSED_DAYS
         - USER_COURSE_COMPLETION
+        - EXAM_RESULTS
+        - SURVEY_FEEDBACK
 
     DataPointDTO:
       type: object
@@ -803,6 +1096,14 @@ components:
           items:
             $ref: '#/components/schemas/ExamAnswerDTO'
 
+    SurveySubmissionDTO:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamAnswerDTO'
+
     ExamAnswerDTO:
       type: object
       properties:
@@ -815,6 +1116,7 @@ components:
             type: integer
             format: int64
 
+
     ExamResultDTO:
       type: object
       properties:
@@ -826,6 +1128,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExamQuestionResultDTO'
+
+    SurveyResultDTO:
+      type: object
+      properties:
+        totalQuestions:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestionResultDTO'
 
     ExamQuestionResultDTO:
       type: object
@@ -846,3 +1158,170 @@ components:
         correct:
           type: boolean
 
+    SurveyQuestionResultDTO:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          format: int64
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    LoginRequestDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "juan.perez@empresa.com"
+        password:
+          type: string
+          example: "Password123"
+
+    LoginResponseDTO:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        userId:
+          type: integer
+          format: int64
+          example: 12
+        nombre:
+          type: string
+          example: "Juan"
+        apellido:
+          type: string
+          example: "Pérez"
+        email:
+          type: string
+          example: "juan.perez@empresa.com"
+        area:
+          type: string
+          example: "IT"
+        role:
+          type: string
+          example: "ADMIN"
+
+    ChangePasswordRequestDTO:
+      type: object
+      properties:
+        newPassword:
+          type: string
+          example: "NuevoPass123"
+        confirmPassword:
+          type: string
+          example: "NuevoPass123"
+
+    AssignBuddyBulkRequestDTO:
+      type: object
+      properties:
+        buddyId:
+          type: integer
+          format: int64
+        userIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    AssignBuddyBulkResponseDTO:
+      type: object
+      properties:
+        assigned:
+          type: array
+          items:
+            type: integer
+            format: int64
+        skippedAlreadyAssigned:
+          type: array
+          items:
+            type: integer
+            format: int64
+        skippedSelfAssignment:
+          type: array
+          items:
+            type: integer
+            format: int64
+        notFound:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    EmployeeOverviewDTO:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        roleName:
+          type: string
+        buddyFullName:
+          type: string
+        coursesCount:
+          type: integer
+          format: int32
+        avgProgress:
+          type: number
+          format: float
+      required: [ userId, firstName, lastName, email ]
+
+    EmployeesOverviewPageDTO:
+      type: object
+      description: "Página estilo Spring Data: incluye 'content' y metadatos"
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeOverviewDTO'
+        number:
+          type: integer
+          description: "número de página (0-based)"
+        size:
+          type: integer
+          description: "tamaño de página"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean
+
+    CourseSummaryDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        progressPercent:
+          type: integer
+          format: int32
+        favorite:
+          type: boolean
+        createdDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date

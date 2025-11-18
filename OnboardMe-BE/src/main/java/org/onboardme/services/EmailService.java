@@ -27,4 +27,30 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendChangePasswordEmail(String to, String firstName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("juancruzcaggiano@gmail.com");
+        message.setTo(to);
+        message.setSubject("Contraseña actualizada en la Plataforma OnboardMe");
+        message.setText("Estimado/a " + firstName + ",\n\n" +
+                "Le informamos que su contraseña ha sido actualizada con éxito.\n" +
+                "Saludos cordiales,\n" +
+                "El equipo de soporte.");
+
+        mailSender.send(message);
+    }
+
+    public void sendResetPasswordEmail(String to, String firstName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("juancruzcaggiano@gmail.com");
+        message.setTo(to);
+        message.setSubject("Contraseña reestablecida en la Plataforma OnboardMe");
+        message.setText("Estimado/a " + firstName + ",\n\n" +
+                "Le informamos que su contraseña ha sido reestablecida con éxito.\n" +
+                "Saludos cordiales,\n" +
+                "El equipo de soporte.");
+
+        mailSender.send(message);
+    }
 }

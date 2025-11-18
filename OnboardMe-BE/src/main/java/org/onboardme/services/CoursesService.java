@@ -11,7 +11,10 @@ import org.onboardme.transformers.SectionTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.onboardme.model.CourseSummaryDTO;
 
+import java.time.ZoneId;
+import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -217,6 +220,50 @@ public class CoursesService {
         Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(userId, courseId)
                 .orElseThrow(() -> new EntityNotFoundException("Inscripción no encontrada"));
         return enrollmentTransformer.buildEnrollmentResponse(enrollment);
+    }
+
+    public List<CourseSummaryDTO> getFavoritesSummary(Long userId) {
+        var favorites = enrollmentRepository.findByUserIdAndFavoriteTrue(userId);
+
+        return favorites.stream()
+                .map(e -> {
+                    var c = e.getCourse();
+
+                    CourseSummaryDTO dto = new CourseSummaryDTO();
+                    dto.setId(c.getId());
+                    dto.setTitle(c.getTitle());
+                    Double prog = getCourseProgress(c.getId(), userId);
+                    dto.setProgressPercent(prog != null ? (int) Math.round(prog) : 0);
+                    dto.setFavorite(true);
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    public List<CourseSummaryDTO> getCoursesForCalendar(Long userId) {
+        var enrollments = enrollmentRepository.findByUserId(userId);
+        var courses = enrollments.stream()
+                .map(e -> e.getCourse())
+                .distinct()
+                .toList();
+
+        return courses.stream().map(c -> {
+            CourseSummaryDTO dto = new CourseSummaryDTO();
+            dto.setId(c.getId());
+            dto.setTitle(c.getTitle());
+            dto.setFavorite(
+                    enrollments.stream().anyMatch(e ->
+                            e.getCourse().getId().equals(c.getId()) && Boolean.TRUE.equals(e.getFavorite()))
+            );
+            if (c.getExpiryDate() != null) {
+                dto.setExpiryDate(c.getExpiryDate().toInstant()
+                        .atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+            }
+            Double p = getCourseProgress(c.getId(), userId);
+            dto.setProgressPercent(p != null ? (int) Math.round(p) : 0);
+            return dto;
+        }).toList();
     }
 
 }

@@ -1,6 +1,4 @@
-Nombre,Apellido,Email,Contrasenia,Id_Rol,Area
-Juan,Pérez,jcaggiano@frba.utn.edu.ar,pass123,Empleado,IT
-María,Gómez,maria.gomez@example.com,pass123,Empleado,SEGURIDAD
-Carlos,López,carlos.lopez@example.com,pass123,Empleado,SOPORTE
-Lucía,Martínez,lucia.martinez@example.com,pass123,Empleado,GERENCIA
-Pedro,Fernández,pedro.fernandez@example.com,pass123,Empleado,IT
+Nombre,Apellido,Email,Id_Rol,Area,Direccion,Telefono,FechaNacimiento
+Juan Cruz,Caggiano,reservasutn@gmail.com,Empleado,IT,Palermo123,1144401769,18/06/1997
+Franco,Cingolani,fcingolaniroj@frba.utn.edu.ar,Empleado,GERENCIA,Palermo123,1133114402,24/06/1996
+Rodrigo,Vila,rvilabrinus@frba.utn.edu.ar,Empleado,ADMINISTRATIVO,Palermo123,1153207689,08/03/1999

@@ -20,7 +20,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop  # use `none`, `validate`, `update`, or `create-drop`
+      ddl-auto: create-drop
+      # use `none`, `validate`, `update`, or `create-drop`
     show-sql: true       # show SQL queries in the console
     properties:
       hibernate:
@@ -30,8 +31,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: juancruzcaggiano@gmail.com
-    password: djyj rsoy zzwa nath
+    username: onboardmesoporte@gmail.com
+    password: jvcz yszk klca orsc
     properties:
       mail:
         smtp:

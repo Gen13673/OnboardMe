@@ -1,4 +1,4 @@
-import { SectionContent } from './SectionContent';
+import { SectionContent } from "./SectionContent";
 
 export interface Section {
   id: number;

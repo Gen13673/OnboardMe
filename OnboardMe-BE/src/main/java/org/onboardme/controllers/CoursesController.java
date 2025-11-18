@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.onboardme.model.CourseSummaryDTO;
 
 import java.util.List;
 
@@ -39,8 +40,9 @@ public class CoursesController implements CoursesApi {
     }
 
     @Override
-    public ResponseEntity<List<CourseDTO>> getFavorites(Long userId) {
-        return ResponseEntity.ok(coursesService.getFavorites(userId));
+    public ResponseEntity<List<CourseSummaryDTO>> getFavorites(Long userId) {
+        List<CourseSummaryDTO> out = coursesService.getFavoritesSummary(userId);
+        return ResponseEntity.ok(out);
     }
 
     @Override
@@ -74,5 +76,9 @@ public class CoursesController implements CoursesApi {
         return ResponseEntity.ok(enrollment);
     }
 
+    public ResponseEntity<List<CourseSummaryDTO>> getCoursesForCalendar(Long idUser) {
+        var out = coursesService.getCoursesForCalendar(idUser);
+        return ResponseEntity.ok(out);
+    }
 
 }

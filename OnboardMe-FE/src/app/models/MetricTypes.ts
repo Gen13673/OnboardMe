@@ -11,4 +11,6 @@ export interface GenericMetricDTO {
 export type MetricTypeDTO =
   | "COURSE_USER_PROGRESS"
   | "COURSE_USER_AVG_COMPLETION_TIME"
-  | "USER_COURSE_COMPLETION";
+  | "USER_COURSE_COMPLETION"
+  | "EXAM_RESULTS"
+  | "SURVEY_FEEDBACK";
