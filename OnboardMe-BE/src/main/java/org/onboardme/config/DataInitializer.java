@@ -123,6 +123,16 @@ public class DataInitializer {
                 .orElseGet(() -> userRepository.save(
                         new User(null, "Diego", "López", "diego.rrhh@empresa.com", passwordService.hashPassword("rrhh123"), "RRHH", fechaAlta, 1, "una direccion 123", "1152456456", fechaAlta, rrhh, null, null, buddyUser)));
 
+        Date ahora = new Date();
+        User buddyAlex = userRepository.findByEmail("gciruzzi@frba.utn.edu.ar").orElseGet(() ->
+                userRepository.save(
+                        new User(
+                                null, "Genaro", "Ciruzzi", "gciruzzi@frba.utn.edu.ar", passwordService.hashPassword("buddy123"),
+                                "IT", ahora, 1, "Av. Siempreviva 742", "1158864784", ahora,
+                                buddy, null, null, null
+                        )
+                )
+        );
         // ---- Para Mauro agregamos 4 más ----
         userRepository.findByEmail("andres.empleado@empresa.com")
                 .orElseGet(() -> userRepository.save(
@@ -220,8 +230,8 @@ public class DataInitializer {
                                 empleado, null, null, buddyUser3)));
 
         // ---------- CURSOS ----------
-        Date ahora = new Date();
         Date dentroDeUnMes = new Date(ahora.getTime() + (1000L * 60 * 60 * 24 * 30));
+        Date dentroDeQuincena = new Date(ahora.getTime() + (1000L * 60 * 60 * 24 * 15));
         LocalDate localDateAyer = LocalDate.now().minusDays(1);
         Date ayer = Date.from(localDateAyer.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
@@ -259,7 +269,7 @@ public class DataInitializer {
 
         Course cursoJava = courseRepository.findByTitle("Introducción a Java")
                 .orElseGet(() -> courseRepository.save(
-                        new Course(null, "Introducción a Java", "Principios básicos de programación en java.", "IT", ahora, dentroDeUnMes, rrhhUser, null, null)));
+                        new Course(null, "Introducción a Java", "Principios básicos de programación en java.", "IT", ahora, dentroDeQuincena, buddyAlex, null, null)));
 
         // ---------- SECCIONES (orden en cada curso) ----------
         Section s1 = sectionRepository.findByCourseIdAndTitle(cursoOnboarding.getId(), "Bienvenida")
@@ -629,80 +639,85 @@ public class DataInitializer {
 
             ExamQuestion q21_1 = new ExamQuestion();
             q21_1.setType(QuestionType.SINGLE_CHOICE);
-            q21_1.setText("¿Cuál es el objetivo principal de una reunión efectiva?");
-            ExamOption o21_11 = new ExamOption(); o21_11.setText("Tomar decisiones y/o alinear al equipo con un objetivo claro"); o21_11.setCorrect(true);
-            ExamOption o21_12 = new ExamOption(); o21_12.setText("Llenar el tiempo y socializar"); o21_12.setCorrect(false);
-            ExamOption o21_13 = new ExamOption(); o21_13.setText("Repetir información que podría enviarse por email"); o21_13.setCorrect(false);
-            q21_1.setOptions(List.of(o21_11, o21_12, o21_13));
+            q21_1.setText("¿Cuál es el framework más famoso de la JVM según el video?");
+            ExamOption o21_11 = new ExamOption(); o21_11.setText("Maven"); o21_11.setCorrect(false);
+            ExamOption o21_12 = new ExamOption(); o21_12.setText("Gradle"); o21_12.setCorrect(false);
+            ExamOption o21_13 = new ExamOption(); o21_13.setText("Spring Boot"); o21_13.setCorrect(true);
+            ExamOption o21_14 = new ExamOption(); o21_14.setText("Kotlin"); o21_14.setCorrect(false);
+            q21_1.setOptions(List.of(o21_11, o21_12, o21_13,o21_14));
 
             ExamQuestion q21_2 = new ExamQuestion();
-            q21_2.setType(QuestionType.MULTIPLE_CHOICE);
-            q21_2.setText("¿Qué elementos debe incluir una agenda de reunión?");
-            ExamOption o21_21 = new ExamOption(); o21_21.setText("Temas con tiempo estimado"); o21_21.setCorrect(true);
-            ExamOption o21_22 = new ExamOption(); o21_22.setText("Responsables por tema"); o21_22.setCorrect(true);
-            ExamOption o21_23 = new ExamOption(); o21_23.setText("Chistes para romper el hielo"); o21_23.setCorrect(false);
-            q21_2.setOptions(List.of(o21_21, o21_22, o21_23));
+            q21_2.setType(QuestionType.SINGLE_CHOICE);
+            q21_2.setText("¿Qué herramienta se utiliza clásicamente en el mundo de Spring Boot para crear la base de código?");
+            ExamOption o21_21 = new ExamOption(); o21_21.setText("IntelliJ"); o21_21.setCorrect(false);
+            ExamOption o21_22 = new ExamOption(); o21_22.setText("Spring Initializer"); o21_22.setCorrect(true);
+            ExamOption o21_23 = new ExamOption(); o21_23.setText("Gradle"); o21_23.setCorrect(false);
+            ExamOption o21_24 = new ExamOption(); o21_24.setText("Kotlin API Skeleton"); o21_24.setCorrect(false);
+            q21_2.setOptions(List.of(o21_21, o21_22, o21_23,o21_24));
 
             ExamQuestion q21_3 = new ExamQuestion();
             q21_3.setType(QuestionType.SINGLE_CHOICE);
-            q21_3.setText("Si la conversación se desvía del tema, ¿qué conviene hacer?");
-            ExamOption o21_31 = new ExamOption(); o21_31.setText("Registrar el tema en un 'parking lot' y volver a la agenda"); o21_31.setCorrect(true);
-            ExamOption o21_32 = new ExamOption(); o21_32.setText("Seguir el desvío hasta que se resuelva"); o21_32.setCorrect(false);
-            ExamOption o21_33 = new ExamOption(); o21_33.setText("Cancelar la reunión"); o21_33.setCorrect(false);
-            q21_3.setOptions(List.of(o21_31, o21_32, o21_33));
+            q21_3.setText("¿Qué hace la anotación @SpringBootApplication?");
+            ExamOption o21_31 = new ExamOption(); o21_31.setText("Crea un controlador REST."); o21_31.setCorrect(false);
+            ExamOption o21_32 = new ExamOption(); o21_32.setText("Define un punto de entrada para la aplicación Spring Boot."); o21_32.setCorrect(true);
+            ExamOption o21_33 = new ExamOption(); o21_33.setText("Especifica el verbo HTTP a usar."); o21_33.setCorrect(false);
+            ExamOption o21_34 = new ExamOption(); o21_34.setText("Define una clase como un servicio."); o21_34.setCorrect(false);
+            q21_3.setOptions(List.of(o21_31, o21_32, o21_33,o21_34));
 
             ExamQuestion q21_4 = new ExamQuestion();
             q21_4.setType(QuestionType.MULTIPLE_CHOICE);
-            q21_4.setText("¿Cuándo una reunión debió ser asincrónica (email/chat)?");
-            ExamOption o21_41 = new ExamOption(); o21_41.setText("Cuando no se requieren decisiones ni discusión"); o21_41.setCorrect(true);
-            ExamOption o21_42 = new ExamOption(); o21_42.setText("Cuando es sólo un status unidireccional"); o21_42.setCorrect(true);
-            ExamOption o21_43 = new ExamOption(); o21_43.setText("Cuando se necesita lluvia de ideas en vivo"); o21_43.setCorrect(false);
-            q21_4.setOptions(List.of(o21_41, o21_42, o21_43));
+            q21_4.setText("¿Qué afirmaciones son verdaderas sobre el uso de @RestController y @GetMapping en Spring Boot, según el video?");
+            ExamOption o21_41 = new ExamOption(); o21_41.setText("@RestController crea una clase que es un controlador y un servicio."); o21_41.setCorrect(true);
+            ExamOption o21_42 = new ExamOption(); o21_42.setText("@GetMapping especifica el path al que debe responder el endpoint."); o21_42.setCorrect(true);
+            ExamOption o21_43 = new ExamOption(); o21_43.setText("@RestController obliga a que todos los endpoints devuelvan un response body por defecto."); o21_43.setCorrect(false);
+            ExamOption o21_44 = new ExamOption(); o21_44.setText("@GetMapping indica el verbo HTTP a usar para un endpoint."); o21_44.setCorrect(true);
+            q21_4.setOptions(List.of(o21_41, o21_42, o21_43,o21_44));
 
             ExamQuestion q21_5 = new ExamQuestion();
             q21_5.setType(QuestionType.MULTIPLE_CHOICE);
-            q21_5.setText("¿Cuál es el rol del facilitador?");
-            ExamOption o21_51 = new ExamOption(); o21_51.setText("Cuidar los tiempos"); o21_51.setCorrect(true);
-            ExamOption o21_52 = new ExamOption(); o21_52.setText("Fomentar la participación"); o21_52.setCorrect(true);
-            ExamOption o21_53 = new ExamOption(); o21_53.setText("Resumir decisiones y próximos pasos"); o21_53.setCorrect(true);
-            ExamOption o21_54 = new ExamOption(); o21_54.setText("Hablar la mayor parte del tiempo"); o21_54.setCorrect(false);
+            q21_5.setText("¿Qué elementos incluye el repositorio 'Colin API API Skeleton' según lo mencionado en el video?");
+            ExamOption o21_51 = new ExamOption(); o21_51.setText("Tests de aceptación."); o21_51.setCorrect(true);
+            ExamOption o21_52 = new ExamOption(); o21_52.setText("Un archivo XML para la gestión de tareas."); o21_52.setCorrect(true);
+            ExamOption o21_53 = new ExamOption(); o21_53.setText("Un linter."); o21_53.setCorrect(false);
+            ExamOption o21_54 = new ExamOption(); o21_54.setText("Documentación detallada en un archivo README."); o21_54.setCorrect(true);
             q21_5.setOptions(List.of(o21_51, o21_52, o21_53, o21_54));
 
             ExamQuestion q21_6 = new ExamQuestion();
-            q21_6.setType(QuestionType.MULTIPLE_CHOICE);
-            q21_6.setText("¿Qué debe incluir el cierre de la reunión?");
-            ExamOption o21_61 = new ExamOption(); o21_61.setText("Resumen de decisiones"); o21_61.setCorrect(true);
-            ExamOption o21_62 = new ExamOption(); o21_62.setText("Lista de action items con responsables y fechas"); o21_62.setCorrect(true);
-            ExamOption o21_63 = new ExamOption(); o21_63.setText("Opiniones irrelevantes"); o21_63.setCorrect(false);
-            q21_6.setOptions(List.of(o21_61, o21_62, o21_63));
+            q21_6.setType(QuestionType.SINGLE_CHOICE);
+            q21_6.setText("¿Cuál de las siguientes NO es una característica principal del lenguaje de programación Java?");
+            ExamOption o21_61 = new ExamOption(); o21_61.setText("Orientado a objetos"); o21_61.setCorrect(false);
+            ExamOption o21_62 = new ExamOption(); o21_62.setText("Independiente de la plataforma"); o21_62.setCorrect(false);
+            ExamOption o21_63 = new ExamOption(); o21_63.setText("Robusto y fiable"); o21_63.setCorrect(false);
+            ExamOption o21_64 = new ExamOption(); o21_64.setText("Dependiente del sistema operativo"); o21_64.setCorrect(true);
+            q21_6.setOptions(List.of(o21_61, o21_62, o21_63,o21_64));
 
             ExamQuestion q21_7 = new ExamQuestion();
-            q21_7.setType(QuestionType.MULTIPLE_CHOICE);
-            q21_7.setText("Buenas prácticas de puntualidad");
-            ExamOption o21_71 = new ExamOption(); o21_71.setText("Empezar y terminar a horario"); o21_71.setCorrect(true);
-            ExamOption o21_72 = new ExamOption(); o21_72.setText("Dejar 5 minutos de buffer entre reuniones"); o21_72.setCorrect(true);
-            ExamOption o21_73 = new ExamOption(); o21_73.setText("Esperar 15 minutos a los que llegan tarde"); o21_73.setCorrect(false);
-            q21_7.setOptions(List.of(o21_71, o21_72, o21_73));
+            q21_7.setType(QuestionType.SINGLE_CHOICE);
+            q21_7.setText("¿Qué componente de Java permite ejecutar aplicaciones pero no compilar desarrollos?");
+            ExamOption o21_71 = new ExamOption(); o21_71.setText("JDK (Java Development Kit)"); o21_71.setCorrect(false);
+            ExamOption o21_72 = new ExamOption(); o21_72.setText("JRE (Java Runtime Environment)"); o21_72.setCorrect(true);
+            ExamOption o21_73 = new ExamOption(); o21_73.setText("SDK (Software Development Kit)"); o21_73.setCorrect(false);
+            ExamOption o21_74 = new ExamOption(); o21_74.setText("IDE (Integrated Development Environment)"); o21_74.setCorrect(false);
+            q21_7.setOptions(List.of(o21_71, o21_72, o21_73,o21_74));
 
-            c21.setQuestions(List.of(q21_1, q21_2, q21_3, q21_4, q21_5, q21_6, q21_7));
+            ExamQuestion q21_8 = new ExamQuestion();
+            q21_8.setType(QuestionType.SINGLE_CHOICE);
+            q21_8.setText("¿Cuál es el propósito principal de los 'paquetes' en Java?");
+            ExamOption o21_81 = new ExamOption(); o21_81.setText("Definir interfaces para la herencia múltiple"); o21_81.setCorrect(false);
+            ExamOption o21_82 = new ExamOption(); o21_82.setText("Agrupar un conjunto de clases relacionadas bajo un mismo espacio de nombres"); o21_82.setCorrect(true);
+            ExamOption o21_83 = new ExamOption(); o21_83.setText("Controlar el acceso a la memoria y evitar errores de segmentación"); o21_83.setCorrect(false);
+            ExamOption o21_84 = new ExamOption(); o21_84.setText("Optimizar el rendimiento del código mediante la compilación just-in-time"); o21_84.setCorrect(false);
+            q21_8.setOptions(List.of(o21_81, o21_82, o21_83,o21_84));
+
+            c21.setQuestions(List.of(q21_1, q21_2, q21_3, q21_4, q21_5, q21_6, q21_7,q21_8));
             c21.setSection(s21);
             s21.setContent(c21);
             sectionContentRepository.save(c21);
         }
 
         // ===================== SEED MÉTRICAS =====================
-        {
-
             // ------- Buddy Alex -------
-            User buddyAlex = userRepository.findByEmail("gciruzzi@frba.utn.edu.ar").orElseGet(() ->
-                    userRepository.save(
-                            new User(
-                                    null, "Genaro", "Ciruzzi", "gciruzzi@frba.utn.edu.ar", passwordService.hashPassword("buddy123"),
-                                    "IT", ahora, 1, "Av. Siempreviva 742", "1158864784", ahora,
-                                    buddy, null, null, null
-                            )
-                    )
-            );
+
 
             // ------- Empleados de Alex -------
             String[][] emps = {
@@ -731,7 +746,6 @@ public class DataInitializer {
                 }
                 empleadosAlex.add(u);
             }
-        }
         // ===================== FIN SEED MÉTRICAS =====================
 
         // ============== NUEVO CURSO CON ENCUESTA==============
